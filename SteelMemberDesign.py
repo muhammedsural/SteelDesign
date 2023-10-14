@@ -541,14 +541,14 @@ class Flexure:
         self.Lr     = self.Get_Lr(self.i_ts,self.Jc,self.Sx,self.h0,self.Fy,self.E)
         self.Cb     = self.Get_Cb(self.Mmax,self.Ma,self.Mb,self.Mc)
         self.Fcr    = self.Get_ElasticLTB_Fcr(self.Lb,self.i_ts,self.Jc,self.Sx,self.h0,self.Cb,self.E)
-        self.Mn_ltb = self.LateralTorsionalBucklingCapacity( self.Lb,
-                                                self.Lp,
-                                                self.Lr,
-                                                self.Fcr,
-                                                self.Sx,
-                                                self.Zx,
-                                                self.Fy,
-                                                self.Cb)
+        self.Mn_ltb = self.LateralTorsionalBucklingCapacity(self.Lb,
+                                                            self.Lp,
+                                                            self.Lr,
+                                                            self.Fcr,
+                                                            self.Sx,
+                                                            self.Zx,
+                                                            self.Fy,
+                                                            self.Cb)
         self.Mp = self.PlasticFlexureCapacity(self.Fy,self.Zx)
         self.FlexureCapacityCheck(self.Mu,self.Mn_ltb,self.Mp,self.fi_d)
 
@@ -659,14 +659,15 @@ class Flexure:
         Fcr = a * b
         return Fcr
 
-    def LateralTorsionalBucklingCapacity(self,Lb : float, 
-                                Lp : float, 
-                                Lr : float, 
-                                Fcr : float, 
-                                Sx : float, 
-                                Zx : float, 
-                                Fy : float, 
-                                Cb : float = 1.0) -> float:
+    def LateralTorsionalBucklingCapacity(self,
+                                            Lb : float, 
+                                            Lp : float, 
+                                            Lr : float, 
+                                            Fcr : float, 
+                                            Sx : float, 
+                                            Zx : float, 
+                                            Fy : float, 
+                                            Cb : float = 1.0) -> float:
         """
         _summary_
 
@@ -752,50 +753,50 @@ class Flexure:
 
 # TEST
 #========================================================================================================
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     d              = 440 #mm
-#     h              = 344 #mm
-#     tw             = 11.5 #mm
-#     bf_compression = 300 #mm
-#     bf_tension     = 300 #mm
-#     tf_comp        = 21 #mm
-#     tf_tension     = 21 #mm
-#     Vu             = 1370*10**3 #N
-#     a_stiffner     = 1500 #mm
-#     h0             = 281#mm
-#     iy             = 72.9#mm
-#     Jc             = 243.8*10**4#mm^4
-#     Sx             = 2896*10*3    #mm^3
-#     Zx             = 3216*10**3   #mm^3
-#     Iy             = 8563 *10**4  #mm^4
-#     Lb_ltb         = 8000     #mm
-#     Fy             = 355 #N/mm^2
-#     E              = 2*10**5 #
-#     Vu             = 1220 * 10**3 #N
-#     Mu             = 960 * 10**6 #Nmm
-#     Mmax           =1 #Nmm
-#     Ma             =0.438 #Nmm 
-#     Mb             =0.751 #Nmm 
-#     Mc             =0.938 #Nmm  
+    d              = 440 #mm
+    h              = 344 #mm
+    tw             = 11.5 #mm
+    bf_compression = 300 #mm
+    bf_tension     = 300 #mm
+    tf_comp        = 21 #mm
+    tf_tension     = 21 #mm
+    Vu             = 1370*10**3 #N
+    a_stiffner     = 1500 #mm
+    h0             = 281#mm
+    iy             = 72.9#mm
+    Jc             = 243.8*10**4#mm^4
+    Sx             = 2896*10**3    #mm^3
+    Zx             = 3216*10**3   #mm^3
+    Iy             = 8563 *10**4  #mm^4
+    Lb_ltb         = 8000     #mm
+    Fy             = 355 #N/mm^2
+    E              = 2*10**5 #
+    Vu             = 1220 * 10**3 #N
+    Mu             = 960 * 10**6 #Nmm
+    Mmax           =1 #Nmm
+    Ma             =0.438 #Nmm 
+    Mb             =0.751 #Nmm 
+    Mc             =0.938 #Nmm  
 
-#     print("==========KESME HESABI==========")
-#     Vn = Shear(Vu,a_stiffner,h,tw,d,bf_compression,tf_comp,bf_tension,tf_tension,E,Fy,Tension_field_action=False)
-#     print("==========EĞİLME HESABI==========")
-#     M_ltb = Flexure(Mu,
-#                 Lb_ltb,
-#                 Iy,
-#                 h0,
-#                 Sx,
-#                 Zx,
-#                 iy,
-#                 Fy,
-#                 E,
-#                 Jc,
-#                 Mmax,
-#                 Ma,
-#                 Mb,
-#                 Mc)
-#     #print(f"Lr = {M_ltb.Lr}, Lp = {M_ltb.Lp}")
+    # print("==========KESME HESABI==========")
+    # Vn = Shear(Vu,a_stiffner,h,tw,d,bf_compression,tf_comp,bf_tension,tf_tension,E,Fy,Tension_field_action=False)
+    print("==========EĞİLME HESABI==========")
+    M_ltb = Flexure(Mu , 
+                    Lb_ltb  ,
+                    Iy  ,
+                    h0 , 
+                    Sx , 
+                    Zx , 
+                    iy , 
+                    Fy , 
+                    E ,  
+                    Jc , 
+                    Mmax,
+                    Ma,  
+                    Mb,  
+                    Mc  )
+    #print(f"Lr = {M_ltb.Lr}, Lp = {M_ltb.Lp}")
 
     
