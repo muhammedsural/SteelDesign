@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 import math
 
 # Temel birimler N,mm,kg
+# Bütün fonksiyonlarda kesit özellikleri girdi olarak var bunlar bir class içerisinde toplanıp verilebilir. Kod sadeleşir ve bakımı kolaylaşır
 
 def EksenelBasincKesitKontrolü(TopFlangewidth : float, 
                                        TopFlangethick : float, 
@@ -125,7 +126,7 @@ class Shear:
 
 
 
-    def kv_hesapla(self,a : float, h : float) -> float:
+    def Get_kv(self,a : float, h : float) -> float:
         """Gövde levhası burkulma katsayısını hesaplar
 
         Args:
@@ -148,7 +149,7 @@ class Shear:
         
         return kv
 
-    def Cv1_hesapla(self,h : float, tw : float, kv : float, E :float, Fy : float) -> float:
+    def Get_Cv1(self,h : float, tw : float, kv : float, E :float, Fy : float) -> float:
         """Gövde kesme kuvveti dayanım katsayısını hesaplar
 
         Args:
@@ -176,7 +177,7 @@ class Shear:
 
         return Cv1
 
-    def Cv2_hesapla(self,h : float, tw : float, kv : float, E :float, Fy : float) -> float:
+    def Get_Cv2(self,h : float, tw : float, kv : float, E :float, Fy : float) -> float:
         """Kayma etkisinde gövde burkulma katsayısını hesaplar
 
         Args:
@@ -203,7 +204,7 @@ class Shear:
 
         return Cv2
 
-    def NominalKesmeKapasitesi(self,tw  : float, 
+    def Get_NominalShearCapacity(self,tw  : float, 
                                d   : float,
                                h   : float, 
                                Fy  : float,
@@ -280,20 +281,20 @@ class Shear:
             print(f"Vnominal = 0.6 * Fy * Aw * Cv1 = 0.6 * {Fy} * {Aw} * {Cv1} = {Vnominal}")
         return Vnominal
 
-    def Kesme_kapasite_kontrolu(self,Vu : float,Vn : float,fi_d : float=0.9) -> None:
+    def CheckShearCapacity(self,Vu : float,Vn : float,fi_d : float=0.9) -> None:
         Vu = Vu/10**3
         Vn = Vn/10**3
 
         if Vu > fi_d*Vn:
             print(f"Vu = {Vu}kN >{fi_d}*{Vn} = {round(fi_d*Vn,3)}kN  gövde kesme kapasitesi yetersiz rijitlik levhaları kullanılmalı, \nrijitleştirme levhaları kullanıldı ise çekme alanı etkisi dikkate alınabilir\nbunlara rağmen kurtarmıyorsa rijitlik levhalarının aralıkları azaltılmalı veya kiriş gövde kalınlığı arttırılmalıdır")
         else:
-            print(f"Vu = {Vu}kN <= {fi_d}*{Vn} = {round(fi_d*Vn,3)}kN gövde kesme kapasitesi yeterlidir")
+            print(f"Vu = {Vu}kN <= {fi_d}*{Vn} = {round(fi_d*Vn,3)}kN gövde kesme kapasitesi yeterlidir. Rijitleştirme levhaları kullanıldıysa bu levhalar kontrol edilmelidir...")
 
     def __post_init__(self):
-        self.kv  = self.kv_hesapla(self.a,self.h)
-        self.Cv1 = self.Cv1_hesapla(self.h,self.tw,self.kv,self.E,self.Fy)
-        self.Cv2 = self.Cv2_hesapla(self.h,self.tw,self.kv,self.E,self.Fy)
-        self.Vn  = self.NominalKesmeKapasitesi(self.tw, 
+        self.kv  = self.Get_kv(self.a,self.h)
+        self.Cv1 = self.Get_Cv1(self.h,self.tw,self.kv,self.E,self.Fy)
+        self.Cv2 = self.Get_Cv2(self.h,self.tw,self.kv,self.E,self.Fy)
+        self.Vn  = self.Get_NominalShearCapacity(self.tw, 
                                self.d  ,
                                self.h  , 
                                self.Fy ,
@@ -307,7 +308,7 @@ class Shear:
                                self.kv ,
                                self.E  ,
                                self.Tension_field_action) 
-        self.Kesme_kapasite_kontrolu(self.Vu,self.Vn)
+        self.CheckShearCapacity(self.Vu,self.Vn)
 
 #Eksenel Basınç kuvveti etkisindeki I profil elemanların tasarımı
 #========================================================================================================
@@ -316,7 +317,7 @@ class Shear:
 class Compression:
 
 
-    def EulerBurkulmaYükü(L : float, I : float,i : float , K:float = 1.0 , E : float = 2*10**5) -> float:
+    def EulerBucklingLoad(L : float, I : float,i : float , K:float = 1.0 , E : float = 2*10**5) -> float:
         """
         Euler burkulma yükünü hesaplar
         L : float, 
@@ -428,7 +429,7 @@ class Compression:
         Cw = (Iy * h0**2) / 4
         return Cw
     
-    def NarinOlmayanKesitEğilmeliBurulmalıBurkulmaYükü(Lb:float,
+    def LateralTorsionalBucklingLoadWithoutSlendernessMember(Lb:float,
                                                        Fy:float,
                                                        i:float,
                                                        E:float,
@@ -463,8 +464,7 @@ class Compression:
 
         return Fcr
 
-
-    def NarinOlmayanKesitEğilmeBurkulmaYükü(L : float, i : float, Fy : float, E : float) -> float:
+    def FlexureBucklingLoadWithoutSlendernessMember(L : float, i : float, Fy : float, E : float) -> float:
         """
         _summary_
 
@@ -479,7 +479,7 @@ class Compression:
             Fcr = 0.877 * Fe
         return Fcr
     
-    def BasincDayanimi(Fcr_e : float, Fcr_ebb:float, Ag : float) -> float:
+    def CompressionStrength(Fcr_e : float, Fcr_ebb:float, Ag : float) -> float:
         """
         _summary_
 
@@ -494,7 +494,7 @@ class Compression:
         Fcr = min(Fcr_e,Fcr_ebb)
         return Fcr*Ag
 
-    def BasincKapasitesiKontrolu(Pn:float,Pu:float,fi_d:float) -> None:
+    def CheckCompressionStrength(Pn:float,Pu:float,fi_d:float) -> None:
 
         if Pu>fi_d*Pn:
             print(f"Pu = {Pu} > {fi_d*Pn}= fi_d*Pn Basınç kapasitesi yetersizdir...")
@@ -535,13 +535,13 @@ class Flexure:
     
 
     def __post_init__(self):
-        self.Cw = self. get_Cw(self.Iy,self.h0)
-        self.i_ts = self.get_i_ts(self.Iy,self.Cw,self.Sx)
-        self.Lp = self.get_Lp(self.iy,self.Fy,self.E)
-        self.Lr = self.get_Lr(self.i_ts,self.Jc,self.Sx,self.h0,self.Fy,self.E)
-        self.Cb = self.get_Cb(self.Mmax,self.Ma,self.Mb,self.Mc)
-        self.Fcr = self.get_ElasticLTB_Fcr(self.Lb,self.i_ts,self.Jc,self.Sx,self.h0,self.Cb,self.E)
-        self.Mn_ltb = self.get_LTB_FlexureCapacity( self.Lb,
+        self.Cw     = self.Get_Cw(self.Iy,self.h0)
+        self.i_ts   = self.Get_i_ts(self.Iy,self.Cw,self.Sx)
+        self.Lp     = self.Get_Lp(self.iy,self.Fy,self.E)
+        self.Lr     = self.Get_Lr(self.i_ts,self.Jc,self.Sx,self.h0,self.Fy,self.E)
+        self.Cb     = self.Get_Cb(self.Mmax,self.Ma,self.Mb,self.Mc)
+        self.Fcr    = self.Get_ElasticLTB_Fcr(self.Lb,self.i_ts,self.Jc,self.Sx,self.h0,self.Cb,self.E)
+        self.Mn_ltb = self.LateralTorsionalBucklingCapacity( self.Lb,
                                                 self.Lp,
                                                 self.Lr,
                                                 self.Fcr,
@@ -552,7 +552,7 @@ class Flexure:
         self.Mp = self.PlasticFlexureCapacity(self.Fy,self.Zx)
         self.FlexureCapacityCheck(self.Mu,self.Mn_ltb,self.Mp,self.fi_d)
 
-    def get_Cw(self,Iy : float, h0 : float) -> float:
+    def Get_Cw(self,Iy : float, h0 : float) -> float:
         """
         Warping katsayısını hesaplar I tipi kesitler için
             Cw = (Iy * h0**2) / 4 ==> I kesit
@@ -567,7 +567,7 @@ class Flexure:
         Cw = (Iy * h0**2) / 4
         return Cw
     
-    def get_i_ts(self,Iy : float, Cw : float, Sx : float) -> float:
+    def Get_i_ts(self,Iy : float, Cw : float, Sx : float) -> float:
         """
         Etkin atalet yarıçapını hesaplar
 
@@ -582,7 +582,7 @@ class Flexure:
         i_ts = ((math.sqrt(Iy*Cw) / Sx))**0.5
         return i_ts
 
-    def get_Lp(self,i_y : float,Fy:float, E : float = 2*10**5) -> float:
+    def Get_Lp(self,i_y : float,Fy:float, E : float = 2*10**5) -> float:
         """LTB(Yanal burulmali burkulma) olmayacak uzunluğu verir
 
         Args:
@@ -598,7 +598,7 @@ class Flexure:
         Lp = 1.76 * i_y * b
         return round(Lp,2)
 
-    def get_Lr(self,i_ts : float,Jc : float,Sx : float,ho : float,Fy:float, E : float = 2*10**5) -> float:
+    def Get_Lr(self,i_ts : float,Jc : float,Sx : float,ho : float,Fy:float, E : float = 2*10**5) -> float:
         """Elastik LTB oluşumu için gerekli boy
 
         Args:
@@ -618,7 +618,7 @@ class Flexure:
         Lr = 1.95 * i_ts * (E / (0.7 * Fy)) * math.sqrt(a + first)
         return round(Lr,2)
 
-    def get_Cb(self,Mmax : float, Ma : float, Mb : float, Mc : float) -> float:
+    def Get_Cb(self,Mmax : float, Ma : float, Mb : float, Mc : float) -> float:
         """
         _summary_
 
@@ -635,7 +635,7 @@ class Flexure:
         print(f"Cb = 12.5 * Mmax / (2.5 * Mmax + 3*Ma + 4*Mb + 3*Mc) = 12.5 * {Mmax} / (2.5 * {Mmax} + 3*{Ma} + 4*{Mb} + 3*{Mc}) = {round(Cb,2)}\n")
         return round(Cb,2)
 
-    def get_ElasticLTB_Fcr(self,Lb : float,i_ts : float,Jc : float,Sx : float,ho : float ,Cb : float = 1.0 ,E : float = 2*10**5) -> float:
+    def Get_ElasticLTB_Fcr(self,Lb : float,i_ts : float,Jc : float,Sx : float,ho : float ,Cb : float = 1.0 ,E : float = 2*10**5) -> float:
         """
         _summary_
 
@@ -659,7 +659,7 @@ class Flexure:
         Fcr = a * b
         return Fcr
 
-    def get_LTB_FlexureCapacity(self,Lb : float, 
+    def LateralTorsionalBucklingCapacity(self,Lb : float, 
                                 Lp : float, 
                                 Lr : float, 
                                 Fcr : float, 
