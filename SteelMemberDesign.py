@@ -746,57 +746,293 @@ class Flexure:
 #Burulma kuvvet etkisindeki I profil elemanların tasarımı
 #========================================================================================================
 
+@dataclass
+class Torsion:
+
+    def PureTorsionCapacity(G : float, J : float, DerivativeTeta : float) -> float:
+        """Calculate Pure Torsion Capacity
+
+        Args:
+            G (float): Shear modules of elasticity of steel
+            J (float): Polar moment of inertia
+            DerivativeTeta (float): Torsional curvature, Teta is twist angle
+
+        Returns:
+            Ts (float): Pure torsional capacity
+        """
+        Ts = G * J * DerivativeTeta
+        return Ts
+    
+    def WarpingTorsionalCapacity(E : float, Cw : float, TripleDerivativeTeta : float) -> float:
+        """Calculate Warping torsional capacity
+
+        Args:
+            E (float): Young modules of steel
+            Cw (float): Warping constant. Cw=I_f(h^2/2) note that T and L shapes sections Cw almost zero
+            TripleDerivativeTeta (float): thre derivative twist angle. Check design guide 9 
+
+        Returns:
+            Tw (float): Warping torsional capacity
+        """
+        Tw = -1*E*Cw*TripleDerivativeTeta
+        return Tw
+
+    def TorsionCapacity(Ts : float, Tw : float) -> float:
+        return Ts+Tw
+    
 
 #Bileşik kuvvet etkisindeki I profil elemanların tasarımı
 #========================================================================================================
 
 
+
+#Tekil kuvvet altında tasarım kontrolleri / Concentrated Force Limit State Check
+#========================================================================================================
+# 1- Flange local bending
+# 2- Web local yielding
+# 3- Web local crippling
+# 4- Web sidesway buckling
+# 5- Web compression buckling
+# 6- Web panel zone shear
+
+@dataclass
+class Concentrated:
+
+    def FlangeLocalBending(self,tf : float, F_yf : float, y : float) -> float:
+        """_summary_
+
+        Args:
+            tf (float): _description_
+            F_yf (float): _description_
+            y (float): _description_
+
+        Returns:
+            float: _description_
+        """
+        Rn = 1000000
+        if y >= 10*tf:
+            Rn = 6.25 * tf**2 * F_yf
+        return Rn
+    
+    def WebLocalYielding(self,lb : float, k : float, Fyw : float, tw : float, y : float, d : float) -> float:
+        """_summary_
+
+        Args:
+            lb (float): Bearing plate length
+            k (float): _description_
+            Fyw (float): _description_
+            tw (float): _description_
+            y (float): _description_
+            d (float): _description_
+
+        Returns:
+            float: _description_
+        """
+        if y > d:
+            Rn = (5*k + lb) * Fyw * tw
+            print(f"y > d ==> Rn = (5*k + lb) * Fyw * tw = (5*{k} + {lb}) * {Fyw} * {tw} = {Rn}N")
+        else:
+            Rn = (2.5*k + lb) * Fyw * tw
+            print(f"y <= d ==> Rn = (2.5*k + lb) * Fyw * tw = (2.5*{k} + {lb}) * {Fyw} * {tw} = {Rn}N")
+        
+        return Rn
+    
+    def WebLocalCrippling(self,y : float, d : float, Lb : float, tw : float, tf : float, E : float, Fyw : float) -> float:
+        """_summary_
+
+        Args:
+            y (float): _description_
+            d (float): overall depth of the member
+            Lb (float): length of bearing
+            tw (float): Web thickness
+            tf (float): Flange thickness
+            E (float): _description_
+            Fyw (float): _description_
+
+        Returns:
+            float: _description_
+        """
+        if y > d:
+            Rn = 0.8 * tw**2 * (1 + 3*(Lb/d)*(tw/tf)**1.5) * math.sqrt((E*Fyw*tf)/tw)
+        if y <= d and Lb/d <= 0.2:
+            Rn = 0.4 * tw**2 * (1 + 3*(Lb/d)*(tw/tf)**1.5) * math.sqrt((E*Fyw*tf)/tw)
+        if y <= d and Lb/d > 0.2:
+            Rn = 0.4 * tw**2 * (1 + 3*((4*Lb/d)-0.2)*(tw/tf)**1.5) * math.sqrt((E*Fyw*tf)/tw)
+        return Rn
+
+    def WebSideswayBuckling(self,h : float, tw : float, Lb : float, bf : float, Cr : float, tf : float, CompFlangeRestrainedRotation : bool) -> float:
+        """_summary_
+
+        Args:
+            h (float) : _description_
+            tw (float): _description_
+            Lb (float): Largest laterally unbraced length along either flange at the point of load
+            bf (float): _description_
+            Cr (float): 6.6x106 MPa for Mu < My at the location of the force
+                        3.3x106 MPa for Mu≥ My at the location of the force
+            tf (float): _description_
+            CompFlangeRestrainedRotation (bool): _description_
+
+        Returns:
+            float: _description_
+        """
+        trashold = (h/tw) / (Lb/bf)
+
+        if CompFlangeRestrainedRotation:
+            if trashold <= 2.3:
+                Rn = ((Cr * tw**3 * tf)/h**2) * (1 + 0.4 * trashold**3)
+            if trashold > 2.3:
+                print("Web sidesway buckling doesn't occur")
+                Rn = 10000000
+        else:
+            if trashold <= 1.7:
+                Rn = ((Cr * tw**3 * tf)/h**2) * (0.4 * trashold**3)
+            if trashold > 1.7:
+                print("Web sidesway buckling doesn't occur")
+                Rn = 10000000
+        
+        return Rn
+    
+    def WebCompressionBuckling(self,y : float, d : float, tw : float, h : float, E : float, Fyw : float) -> float:
+        """_summary_
+
+        Args:
+            y (float): _description_
+            d (float): _description_
+            tw (float): _description_
+            h (float): _description_
+            E (float): _description_
+            Fyw (float): _description_
+
+        Returns:
+            float: _description_
+        """
+        if y >= d/2:
+            Rn = (24 * tw**3 * math.sqrt(E*Fyw))/h
+        else:
+            Rn = (12 * tw**3 * math.sqrt(E*Fyw))/h
+        
+        return Rn
+    
+    def WebPanelZoneShear(self,Pu : float, Py : float, dc : float, tw : float, db : float, bcf : float, tcf : float, PanelZoneConsideredAnalysis : bool) -> float:
+        """_summary_
+
+        Args:
+            Pu (float): _description_
+            Py (float): _description_
+            dc (float): _description_
+            tw (float): _description_
+            db (float): _description_
+            bcf (float): _description_
+            tcf (float): _description_
+            PanelZoneConsideredAnalysis (bool): _description_
+
+        Returns:
+            float: _description_
+        """
+        if PanelZoneConsideredAnalysis == False:
+            if Pu <= 0.4*Py:
+                Rv = 0.6 * Fy* dc * tw
+            else:
+                Rv = 0.6 * Fy* dc * tw * (1.4 - (Pu/Py))
+        else:
+            if Pu <= 0.75*Py:
+                Rv = 0.6 * Fy* dc * tw * (1 + ((3*bcf*tcf**2)/(db*dc*tw)))
+            else:
+                Rv = 0.6 * Fy* dc * tw * (1 + ((3*bcf*tcf**2)/(db*dc*tw))) * (1.9 - (1.2*Pu/Py))
+        
+        return Rv
+
+    def CheckWebPanelZoneShear(Rv : float, Mu1 : float, Mu2 : float, dm1 : float, dm2 : float, Vu : float, fi_d : float = 0.85) -> None:
+        TotalFu = (Mu1/dm1) + (Mu2/dm2) - Vu
+
+        if fi_d*Rv >= TotalFu:
+            print("Panel zone safe..")
+        else:
+            print("Panel zone not safe !!!")
+
 # TEST
 #========================================================================================================
 if __name__ == "__main__":
 
-    d              = 440 #mm
-    h              = 344 #mm
-    tw             = 11.5 #mm
-    bf_compression = 300 #mm
-    bf_tension     = 300 #mm
-    tf_comp        = 21 #mm
-    tf_tension     = 21 #mm
-    Vu             = 1370*10**3 #N
-    a_stiffner     = 1500 #mm
-    h0             = 281#mm
-    iy             = 72.9#mm
-    Jc             = 243.8*10**4#mm^4
-    Sx             = 2896*10**3    #mm^3
-    Zx             = 3216*10**3   #mm^3
-    Iy             = 8563 *10**4  #mm^4
-    Lb_ltb         = 8000     #mm
-    Fy             = 355 #N/mm^2
-    E              = 2*10**5 #
-    Vu             = 1220 * 10**3 #N
-    Mu             = 960 * 10**6 #Nmm
-    Mmax           =1 #Nmm
-    Ma             =0.438 #Nmm 
-    Mb             =0.751 #Nmm 
-    Mc             =0.938 #Nmm  
+    # d              = 440 #mm
+    # h              = 344 #mm
+    # tw             = 11.5 #mm
+    # bf_compression = 300 #mm
+    # bf_tension     = 300 #mm
+    # tf_comp        = 21 #mm
+    # tf_tension     = 21 #mm
+    # Vu             = 1370*10**3 #N
+    # a_stiffner     = 1500 #mm
+    # h0             = 281#mm
+    # iy             = 72.9#mm
+    # Jc             = 243.8*10**4#mm^4
+    # Sx             = 2896*10**3    #mm^3
+    # Zx             = 3216*10**3   #mm^3
+    # Iy             = 8563 *10**4  #mm^4
+    # Lb_ltb         = 8000     #mm
+    # Fy             = 355 #N/mm^2
+    # E              = 2*10**5 #
+    # Vu             = 1220 * 10**3 #N
+    # Mu             = 960 * 10**6 #Nmm
+    # Mmax           =1 #Nmm
+    # Ma             =0.438 #Nmm 
+    # Mb             =0.751 #Nmm 
+    # Mc             =0.938 #Nmm  
 
     # print("==========KESME HESABI==========")
     # Vn = Shear(Vu,a_stiffner,h,tw,d,bf_compression,tf_comp,bf_tension,tf_tension,E,Fy,Tension_field_action=False)
-    print("==========EĞİLME HESABI==========")
-    M_ltb = Flexure(Mu , 
-                    Lb_ltb  ,
-                    Iy  ,
-                    h0 , 
-                    Sx , 
-                    Zx , 
-                    iy , 
-                    Fy , 
-                    E ,  
-                    Jc , 
-                    Mmax,
-                    Ma,  
-                    Mb,  
-                    Mc  )
-    #print(f"Lr = {M_ltb.Lr}, Lp = {M_ltb.Lp}")
+    # print("==========EĞİLME HESABI==========")
+    # M_ltb = Flexure(Mu , 
+    #                 Lb_ltb  ,
+    #                 Iy  ,
+    #                 h0 , 
+    #                 Sx , 
+    #                 Zx , 
+    #                 iy , 
+    #                 Fy , 
+    #                 E ,  
+    #                 Jc , 
+    #                 Mmax,
+    #                 Ma,  
+    #                 Mb,  
+    #                 Mc  )
+    # #print(f"Lr = {M_ltb.Lr}, Lp = {M_ltb.Lp}")
 
+
+    #Concentrated Force Test
+    #===========================================
+    Zx = 2.9*10**6 #mm^3
+    Ix = 762*10**6 #mm^4
+    d  = 602 #mm
+    tw = 10.5#mm
+    tf = 14.9#mm
+    bf = 228 #mm
+    k  = 27.7 #mm
+    Fy = 355 #MPa
+    y  = 2300
+    Lb = 150
+    E  = 2*10**5
+    h  = d- 2*tf
+    Cr = 6.6*10**6
+
+    conca = Concentrated()
+    Rn_webyielding = conca.WebLocalYielding(Lb,k,Fy,tw,y,d)
+    print(Rn_webyielding/10**3)
+
+    Rn_webcrippling = conca.WebLocalCrippling(y,d,Lb,tw,tf,E,Fy)
+    print(Rn_webcrippling/10**3)
+
+    Rn_WebSideswayBuckling = conca.WebSideswayBuckling(h,tw,Lb,bf,Cr,tf,CompFlangeRestrainedRotation=True)
+    print(Rn_WebSideswayBuckling/10**3)
+
+    Rn_WebCompressionBuckling = conca.WebCompressionBuckling(y,d,tw,h,E,Fy)
+    print(Rn_WebCompressionBuckling/10**3)
+
+    # Rv_WebPanelZoneShear = conca.WebPanelZoneShear(Pu , Py , dc , tw , db , bcf , tcf , PanelZoneConsideredAnalysis = False)
+    # conca.CheckWebPanelZoneShear(Mu1,Mu2,dm1,dm2,Vu)
+
+
+
+        
     
