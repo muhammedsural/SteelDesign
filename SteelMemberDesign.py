@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 import math
 
 # Temel birimler N,mm,kg
-# Bütün fonksiyonlarda kesit özellikleri girdi olarak var bunlar bir class içerisinde toplanıp verilebilir. Kod sadeleşir ve bakımı kolaylaşır
 
 def EksenelBasincKesitKontrolü(TopFlangewidth : float, 
                                        TopFlangethick : float, 
@@ -126,7 +125,7 @@ class Shear:
 
 
 
-    def Get_kv(self,a : float, h : float) -> float:
+    def kv_hesapla(self,a : float, h : float) -> float:
         """Gövde levhası burkulma katsayısını hesaplar
 
         Args:
