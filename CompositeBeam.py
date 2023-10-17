@@ -119,3 +119,92 @@ def efektif_doseme_genisligi(Length:float, Space:float):
     b2 = 2 * Space  * 1/2 #mm Eşit aralık kabul edildi
     b = min(b1,b2) #mm
     return b
+
+
+# def yapim_asamasi_sehimi(Pg : float, Pq : float, L : float, Ix : float, E:float = 200_000, wg: float = 1.) -> float:
+#     """Basit mesnetli kompozit kiriş için yapım aşaması sehim hesabı
+
+#     Args:
+#         Pg (float): Ölü yük
+#         L (float): Kiriş uzunluğu
+#         Ix (float): Kiriş atalet momenti
+#         E (float, optional): Kiriş malzemesinin elastisite modülü. Defaults to 200_000. birim : N/mm2
+#         wg (float, optional): Kiriş ağırlığı birim:kN/m. Defaults to 1. 
+
+#     Returns:
+#         delta_1 (float): Yapım aşamasındaki sehim
+#     """
+
+#     #Ölü yük etkisi
+#     a = 2*(Pg * L**3 / (28 * E * Ix))
+#     b = (5 * wg * L**4 / (384 * E * Ix))
+#     delta_1 = a + b
+
+#     if delta_1 > (L / 360):
+#         print(f"Ölü yük durumunda sehim sınırı sağlanamadı => {round(delta_1,2)}mm > {round(L/360,2)}mm çelik kirişe ters sehim verilmesi veya yapım aşamasında geçici destek kullanımı ile çelik kirişin düşey yerdeğiştirmesi azaltılabilir.")
+
+#     #hareketli yük etkisi
+#     delta_2 = (2 * Pq * L **3 / (28 * E * Ix))
+
+#     #total etki
+#     delta = delta_1 + delta_2
+
+#     if delta > (L/300):
+#         print(f"Yapım aşaması sehim sınırı sağlanamadı kiriş boyutu arttırılabilir. => {round(delta,2)}mm > {round(L/300,2)}mm" )
+#     return round(delta,2)
+
+# def efektif_doseme_genisligi(L : float, Lu : float) -> float:
+#     """Efektif kompozit döşeme genişliği hesabı
+
+#     Args:
+#         L (float): Kiriş uzunluğu birim : m
+#         Lu (float): Kiriş aralığı birim : m
+
+#     Returns:
+#         b_eff float: efektif döşeme genişliği birim : m
+#     """
+#     b1 = L/8
+#     b2 = Lu/2
+
+#     b = 2*min(b1,b2)
+
+#     return b
+
+# def beton_alanı(h_c_üs : float, b_eff : float, h_r : float) -> float:
+#     """Yaklaşık beton örtü alanı
+
+#     Returns:
+#         Ac float: net beton örtü alanı
+#     """
+#     Ac = (b_eff * h_c_üs) + (0.5 * b_eff * h_r)
+#     print(f"Ac = ({b_eff} * {h_c_üs}) + (0.5 * {b_eff} * {h_r}) = {Ac}mm2")
+#     return Ac
+
+# def kompozit_kiris_eğilme_kapasitesi(Fy : float, Beam : dict, f_ck : float, Ac : float, b_eff : float) -> float:
+   
+#     C_conc  = 0.85 * f_ck * Ac
+#     C_steel = Fy * Beam["Area"]
+    
+
+#     if C_conc < C_steel : 
+#         print(f"Kompozit döşeme kısmi etkileşimlidir. Plastik tarafsız eksen Çelik kirişin başlık veya gövdesindedir.")
+#         M_n = 0.
+
+#     else:
+#         print("Plastik tarafsız eksen beton bloğun içindedir. Tam etkileşimli")
+
+#         C = min(C_conc,C_steel) #N
+#         print(f"C ={C} ")
+
+#         a = C/(0.85 * f_ck * b_eff)
+#         print(f"a = {a}")
+        
+#         y = Beam["d"]/2 + (h_c - a/2) 
+#         print(f"y = {y}")
+
+#         M_n = C * y
+
+#     return round(M_n,2)
+
+# def Kompozit_kirişe_gelen_egilme_momenti(Pu : float):
+#     pass
