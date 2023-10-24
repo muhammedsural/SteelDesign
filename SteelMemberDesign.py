@@ -95,7 +95,7 @@ class Shear:
     Kesme hesaplarının yapıldığı sınıf
     Vu  : Talep kesme kuvveti 
     a   : Varsa rijitleştirme levhaları arası mesafe yoksa 0 girilmeli
-    h   : Kesit yüksekliğ
+    h   : Kesit yüksekliği
     tw  : Gövde et kalınlığı
     d   : Gövde yüksekliği
     bfc : Basınç başlığı genişliği
@@ -106,22 +106,22 @@ class Shear:
     Fy  : Beklenen akma gerilmesi
 
     """
-    Vu  : float
-    a   : float
-    h   : float
-    tw  : float
-    d   : float
-    bfc : float
-    tfc : float
-    bft : float
-    tft : float
-    E   : float
-    Fy  : float
-    Tension_field_action : bool = False
-    kv  : float  = field(init=False)
-    Cv1 : float = field(init=False)
-    Cv2 : float = field(init=False)
-    Vn  : float = field(init=False)
+    Vu                   : float
+    a                    : float
+    h                    : float
+    tw                   : float
+    d                    : float
+    bfc                  : float
+    tfc                  : float
+    bft                  : float
+    tft                  : float
+    E                    : float
+    Fy                   : float
+    Tension_field_action : bool  = False
+    kv                   : float = field(init=False)
+    Cv1                  : float = field(init=False)
+    Cv2                  : float = field(init=False)
+    Vn                   : float = field(init=False)
 
 
 
@@ -462,7 +462,6 @@ class Compression:
             Fcr = 0.877 * Fe
 
         return Fcr
-
 
     def FlexureBucklingLoadWithoutSlendernessMember(L : float, i : float, Fy : float, E : float) -> float:
         """
@@ -938,17 +937,20 @@ class CombineForce:
         Fn = min(0.6*Fy, Fcr)
         return Fn
 
-#Tekil kuvvet altında tasarım kontrolleri / Concentrated Force Limit State Check
-#========================================================================================================
-# 1- Flange local bending
-# 2- Web local yielding
-# 3- Web local crippling
-# 4- Web sidesway buckling
-# 5- Web compression buckling
-# 6- Web panel zone shear
+
 
 @dataclass
 class Concentrated:
+    """
+    #Tekil kuvvet altında tasarım kontrolleri / Concentrated Force Limit State Check
+    #========================================================================================================
+    # 1- Flange local bending
+    # 2- Web local yielding
+    # 3- Web local crippling
+    # 4- Web sidesway buckling
+    # 5- Web compression buckling
+    # 6- Web panel zone shear
+    """
 
     def FlangeLocalBending(self,tf : float, F_yf : float, y : float) -> float:
         """_summary_
