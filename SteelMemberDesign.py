@@ -360,7 +360,7 @@ class Compression:
     
     def Getr0(x0:float,y0:float,Ix:float,Iy:float,Ag:float) -> float:
         """
-        _summary_
+        polar radius of gyration about the shear center
 
         Arguments:
             x0 -- _description_
@@ -370,7 +370,7 @@ class Compression:
             Ag -- _description_
 
         Returns:
-            _description_
+            r0 -- polar radius of gyration about the shear center
         """
         first = x0**2 + y0**2
         second = (Ix + Iy)/Ag
@@ -379,15 +379,15 @@ class Compression:
 
     def GetH(x0 : float, y0 : float, r0 : float) -> float:
         """
-        _summary_
+        flexural constant
 
         Arguments:
-            x0 -- _description_
-            y0 -- _description_
-            r0 -- _description_
+            x0 -- x coordinates of the shear center with respect to the centroid
+            y0 -- y coordinates of the shear center with respect to the centroid
+            r0 -- polar radius of gyration about the shear center
 
         Returns:
-            _description_
+            flexural constant
         """
         H = 1 - (x0**2 + y0**2)/r0**2
         return H
@@ -401,7 +401,7 @@ class Compression:
             Cw -- _description_
             G -- _description_
             J -- _description_
-            Lcz -- _description_
+            Lcz -- effective length for torsional buckling
             Ag -- _description_
             r0 -- _description_
 
@@ -440,6 +440,26 @@ class Compression:
                                                        Fez:float,
                                                        H:float,
                                                        Symt:int) -> float:
+        """_summary_
+
+        Args:
+            Lb (float): _description_
+            Fy (float): _description_
+            i (float): _description_
+            E (float): _description_
+            Cw (float): _description_
+            Lcz (float): _description_
+            Ix (_type_): _description_
+            Iy (_type_): _description_
+            Fex (float): _description_
+            Fey (float): _description_
+            Fez (float): _description_
+            H (float): _description_
+            Symt (int): _description_
+
+        Returns:
+            float: _description_
+        """
        
         Fe = 0.0
         if Symt == 2:
@@ -936,8 +956,6 @@ class CombineForce:
     def OtherSectionCombineForceStrength(self, Fy : float,Fcr : float) -> float:
         Fn = min(0.6*Fy, Fcr)
         return Fn
-
-
 
 @dataclass
 class Concentrated:
