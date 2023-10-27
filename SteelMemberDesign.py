@@ -536,7 +536,7 @@ class Flexure:
     iy   : float
     Fy   : float
     E    : float
-    Jc   : float
+    J   : float
     Mmax : float
     Ma   : float
     Mb   : float
@@ -556,9 +556,9 @@ class Flexure:
         self.Cw     = self.Get_Cw(self.Iy,self.h0)
         self.i_ts   = self.Get_i_ts(self.Iy,self.Cw,self.Sx)
         self.Lp     = self.Get_Lp(self.iy,self.Fy,self.E)
-        self.Lr     = self.Get_Lr(self.i_ts,self.Jc,self.Sx,self.h0,self.Fy,self.E)
+        self.Lr     = self.Get_Lr(self.i_ts,self.J,self.Sx,self.h0,self.Fy,self.E)
         self.Cb     = self.Get_Cb(self.Mmax,self.Ma,self.Mb,self.Mc)
-        self.Fcr    = self.Get_ElasticLTB_Fcr(self.Lb,self.i_ts,self.Jc,self.Sx,self.h0,self.Cb,self.E)
+        self.Fcr    = self.Get_ElasticLTB_Fcr(self.Lb,self.i_ts,self.J,self.Sx,self.h0,self.Cb,self.E)
         self.Mn_ltb = self.LateralTorsionalBucklingCapacity( self.Lb,
                                                 self.Lp,
                                                 self.Lr,
@@ -587,12 +587,12 @@ class Flexure:
     
     def Get_i_ts(self,Iy : float, Cw : float, Sx : float) -> float:
         """
-        Etkin atalet yarıçapını hesaplar
+        Etkin atalet yarıçapını hesaplar\nTBDY Denk. 9.8a kullanılmıştır. Dilenirse 9.8b kullanılabilir.
 
         Arguments:
             Iy -- Y eksenindeki atalet
             Cw -- Çarpılma(Warping) sabiti
-            Sx -- X ekseni etrafında elastik kesit mukavemet momenti
+            Sx -- X(Z) ekseni etrafında elastik kesit mukavemet momenti
 
         Returns:
             Etkin atalet yarıçapı
@@ -616,21 +616,29 @@ class Flexure:
         Lp = 1.76 * i_y * b
         return round(Lp,2)
 
-    def Get_Lr(self,i_ts : float,Jc : float,Sx : float,ho : float,Fy:float, E : float = 2*10**5) -> float:
+    def Get_Lr(self,
+               i_ts : float,
+               J : float,
+               Sx : float,
+               ho : float,
+               Fy:float, 
+               c : float = 1.0,
+               E : float = 2*10**5) -> float:
         """Elastik LTB oluşumu için gerekli boy
 
         Args:
             i_ts (float): Etkin dönme atalet yaricapi
-            Jc (float): Burulma sabiti
+            J (float): Burulma sabiti
             Sx (float): Kesitin x ekseni etrafindaki elastik mukavemet momenti
             ho (float): Enkesit basliklarinin agirlik merkezleri arasindaki uzaklik
             Fy (float): Kesit malzemesinin akma dayanimi
+            c (float, optional): Defaults to 1.0
             E (float, optional): Kesit malzemesinin elastisite modulu. Defaults to 2*10**5.
 
         Returns:
             float: Elastik LTB serbest boy siniri
         """
-        a = Jc/(Sx*ho)
+        a = J*c/(Sx*ho)
         b = 6.76 * (0.7 * Fy / E)**2
         first = math.sqrt(a**2 + b)
         Lr = 1.95 * i_ts * (E / (0.7 * Fy)) * math.sqrt(a + first)
@@ -649,18 +657,18 @@ class Flexure:
         Returns:
             _description_
         """
-        Cb = 12.5 * Mmax / (2.5 * Mmax + 3*Ma + 4*Mb + 3*Mc)
+        Cb = (12.5 * Mmax) / (2.5 * Mmax + 3*Ma + 4*Mb + 3*Mc)
         print(f"Cb = 12.5 * Mmax / (2.5 * Mmax + 3*Ma + 4*Mb + 3*Mc) = 12.5 * {Mmax} / (2.5 * {Mmax} + 3*{Ma} + 4*{Mb} + 3*{Mc}) = {round(Cb,2)}\n")
         return round(Cb,2)
 
-    def Get_ElasticLTB_Fcr(self,Lb : float,i_ts : float,Jc : float,Sx : float,ho : float ,Cb : float = 1.0 ,E : float = 2*10**5) -> float:
+    def Get_ElasticLTB_Fcr(self,Lb : float,i_ts : float,J : float,Sx : float,ho : float ,Cb : float = 1.0 ,E : float = 2*10**5) -> float:
         """
         _summary_
 
         Arguments:
             Lb -- _description_
             i_ts -- _description_
-            Jc -- _description_
+            J -- _description_
             Sx -- _description_
             ho -- _description_
 
@@ -671,10 +679,11 @@ class Flexure:
         Returns:
             _description_
         """
-
+        print(f"Cb = {Cb}, Lb = {Lb}, its = {i_ts}")
         a = (Cb * math.pi**2 * E) / ((Lb/i_ts)**2)
-        b = math.sqrt(1 + (0.078 * (Jc / (Sx * ho)) * (Lb / i_ts)**2 ))
+        b = math.sqrt(1 + (0.078 * (J / (Sx * ho)) * (Lb / i_ts)**2 ))
         Fcr = a * b
+        print(f" Fcr = (Cb * pi**2 * E) / ((Lb/i_ts)**2) * (1 + (0.078 * (Jc / (Sx * ho)) * (Lb / i_ts)**2 ))^0.5 = ({Cb} * pi**2 * E) / (({Lb}/{i_ts})**2) * (1 + (0.078 * ({J} / ({Sx} * {ho})) * ({Lb} / {i_ts})**2 ))^0.5 = {Fcr}")
         return Fcr
 
     def LateralTorsionalBucklingCapacity(self,Lb : float, 
@@ -706,7 +715,7 @@ class Flexure:
 
         Mp = Fy*Zx # plastik mukavemet momenti
         Me = Fy*Sx # elastik mukavemet momenti
-        print(f"Mp = Fy*Zx = {Fy}*{Zx} = {Mp/10**6}kNm\nMp = Fy*Sx = {Fy}*{Sx} = {Me/10**6}kNm\n")
+        print(f"Mp = Fy*Zx = {Fy}*{Zx} = {Mp/10**6}kNm\nMe = Fy*Sx = {Fy}*{Sx} = {Me/10**6}kNm\n")
 
         if Lb <= Lp :
             print(f"L_ltb ={Lb} <= {Lp}=Lp LTB oluşmaz Mn platik moment kapasitesine eşittir\n")
@@ -798,7 +807,6 @@ class Torsion:
 
 #Bileşik kuvvet etkisindeki I profil elemanların tasarımı
 #========================================================================================================
-
 class CombineForce:
 
     def CheckCombineFlexureAndCompressionSymetricMembers(self,Pr : float, Pc : float, Mrx : float, Mry : float, Mcx : float, Mcy : float) -> None:
@@ -1138,7 +1146,8 @@ if __name__ == "__main__":
     # a_stiffner     = 1500 #mm
     # h0             = 281#mm
     # iy             = 72.9#mm
-    # Jc             = 243.8*10**4#mm^4
+    # J              = 243.8*10**4#mm^4
+    # c              = 1.0 I profiller için U profiller için bkn. Tbdy denk. 9.7b
     # Sx             = 2896*10**3    #mm^3
     # Zx             = 3216*10**3   #mm^3
     # Iy             = 8563 *10**4  #mm^4
