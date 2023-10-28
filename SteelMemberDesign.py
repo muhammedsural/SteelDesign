@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-import math
+from math import sqrt,pi
+from handcalcs import handcalc
 
 # Temel birimler N,mm,kg
 # Bütün fonksiyonlarda kesit özellikleri girdi olarak var bunlar bir class içerisinde toplanıp verilebilir. Kod sadeleşir ve bakımı kolaylaşır
@@ -19,8 +20,8 @@ def EksenelBasincKesitKontrolü(TopFlangewidth : float,
     lamda_Botflange = BotFlangewidth/BotFlangethick
     lamda_Web = Webheight/Webthick
     
-    lamda_r_flange = 0.56 * math.sqrt(E/Fy)
-    lamda_r_web = 1.49*math.sqrt(E/Fy)
+    lamda_r_flange = 0.56 * sqrt(E/Fy)
+    lamda_r_web = 1.49*sqrt(E/Fy)
     CompSlenderCheck = False
 
     if lamda_r_flange<lamda_Topflange:
@@ -50,11 +51,11 @@ def EgilmeKesitKontrolü(TopFlangewidth : float,
     lamda_Botflange = BotFlangewidth/BotFlangethick
     lamda_Web = Webheight/Webthick
     
-    lamda_p_flange = 0.38 * math.sqrt(E/Fy)
-    lamda_r_flange = 1.0 * math.sqrt(E/Fy)
+    lamda_p_flange = 0.38 * sqrt(E/Fy)
+    lamda_r_flange = 1.0 * sqrt(E/Fy)
 
-    lamda_p_web = 3.76*math.sqrt(E/Fy)
-    lamda_r_web = 5.70*math.sqrt(E/Fy)
+    lamda_p_web = 3.76*sqrt(E/Fy)
+    lamda_r_web = 5.70*sqrt(E/Fy)
 
     FlexCompactCheck = False
 
@@ -124,7 +125,6 @@ class Shear:
     Vn                   : float = field(init=False)
 
 
-
     def Get_kv(self,a : float, h : float) -> float:
         """Gövde levhası burkulma katsayısını hesaplar
 
@@ -138,12 +138,12 @@ class Shear:
         if a > 0:
             if a/h <= 3.0:
                 kv = round(5 + (5/(a/h)**2),3)
-                print(f"gövdede, düşey ara rijitlik levhaları kullanıldığından ve a/h <= 3.0 olduğundan Yönetmelik 10.2.1 uyarınca, \ngövde levhası burkulma katsayısı, kv = 5 + (5/(a/h)) = {kv}\n")
+                # print(f"gövdede, düşey ara rijitlik levhaları kullanıldığından ve a/h <= 3.0 olduğundan Yönetmelik 10.2.1 uyarınca, \ngövde levhası burkulma katsayısı, kv = 5 + (5/(a/h)) = {kv}\n")
             else:
                 kv = 5.34
-                print("gövdede, düşey ara rijitlik levhaları kullanıldığından ve a/h > 3.0 olduğundan Yönetmelik 10.2.1 uyarınca, \ngövde levhası burkulma katsayısı, kv = 5.34\n")
+                # print("gövdede, düşey ara rijitlik levhaları kullanıldığından ve a/h > 3.0 olduğundan Yönetmelik 10.2.1 uyarınca, \ngövde levhası burkulma katsayısı, kv = 5.34\n")
         else:
-            print("Gövdede düşey ara rijitlik levhaları kullanılmadığı durum için, Yönetmelik 10.2.1 uyarınca, Denk.(10.3a) ile \ngövde levhası burkulma katsayısı, kv = 5.34 alınmıştır\n")
+            # print("Gövdede düşey ara rijitlik levhaları kullanılmadığı durum için, Yönetmelik 10.2.1 uyarınca, Denk.(10.3a) ile \ngövde levhası burkulma katsayısı, kv = 5.34 alınmıştır\n")
             kv = 5.34
         
         return kv
@@ -162,9 +162,9 @@ class Shear:
             Cv1 (float): Gövde kesme kuvveti dayanım katsayısı
         """
         web_slenderness_ratio = round(h/tw,2)
-        chck_point1 = round(2.24* math.sqrt(E/Fy),2)
-        chck_point2 = round(1.10 * math.sqrt(kv*E/Fy),2)
-        #chck_point3 = 1.37 * math.sqrt(kv*E/Fy)
+        chck_point1 = round(2.24* sqrt(E/Fy),2)
+        chck_point2 = round(1.10 * sqrt(kv*E/Fy),2)
+        #chck_point3 = 1.37 * sqrt(kv*E/Fy)
 
         if web_slenderness_ratio <= chck_point2 or web_slenderness_ratio <= chck_point1:
             print(f"h/tw = {web_slenderness_ratio} <= {chck_point2} = 1.10 * (kv*E/Fy)^0.5 ==> Cv1 = 1.0\n")
@@ -190,7 +190,7 @@ class Shear:
             Cv2 (float): Kayma etkisinde gövde plakasının burkulma katsayısı
         """
         web_slenderness_ratio = round(h/tw,2)
-        chck_point = 1.37 * math.sqrt(kv*E/Fy)
+        chck_point = 1.37 * sqrt(kv*E/Fy)
 
         if web_slenderness_ratio > chck_point:
             pay = 1.51 * kv * E
@@ -245,7 +245,7 @@ class Shear:
         Afc = bfc * tfc
         Aft = bft * tft
         web_slenderness_ratio = round(h/tw,2)
-        chck_point = round(1.10 * math.sqrt(kv*E/Fy),2)
+        chck_point = round(1.10 * sqrt(kv*E/Fy),2)
         Vgeneral = 0.6 * Fy * Aw
 
         if a > 0 :
@@ -261,10 +261,10 @@ class Shear:
                         print(f"h/tw = {web_slenderness_ratio} > {chck_point} = 1.10 * (kv*E/Fy)^0.5 ==> Olduğu için ek kontroller yapılıyor...\n")
 
                         if (2*Aw/(Afc + Aft)) <= 2.5 and h/bfc <=6 and h/bft <= 6.0:
-                            Vnominal = round(Vgeneral * (Cv2 + ((1-Cv2) / (1.15 * math.sqrt(1 + (a/h)**2)) ) ),3)
+                            Vnominal = round(Vgeneral * (Cv2 + ((1-Cv2) / (1.15 * sqrt(1 + (a/h)**2)) ) ),3)
                             print(f"(2*Aw/(Afc + Aft)) = {(2*Aw/(Afc + Aft))} <= 2.5 and h/bfc = {h/bfc} <=6 and h/bft = {h/bft} <= 6.0 ==> Vn = 0.6*Fy*Aw * (Cv2 + ((1-Cv2) / (1.15 * (1 + (a/h)**2))^0.5 ) ) = {Vnominal}\n")
                         else:
-                            Vnominal = round(Vgeneral * (Cv2 + ((1-Cv2) / (1.15 * ((a/h) + math.sqrt(1 + (a/h)**2))) ) ),3)
+                            Vnominal = round(Vgeneral * (Cv2 + ((1-Cv2) / (1.15 * ((a/h) + sqrt(1 + (a/h)**2))) ) ),3)
                             print(f"(2*Aw/(Afc + Aft)) = {(2*Aw/(Afc + Aft))} <= 2.5 and h/bfc = {h/bfc} <=6 and h/bft = {h/bft} <= 6.0  şartlarından biri sağlanmadığı için==>\nVn = 0.6*Fy*Aw * (Cv2 + ((1-Cv2) / (1.15 * ((a/h)+ (1+(a/h)**2)^0.5) ) = {Vnominal}\n")
 
                 if Tension_field_action == False:
@@ -314,9 +314,88 @@ class Shear:
 
 @dataclass
 class Compression:
+    Pu      : float
+    Lcx     : float
+    Lcy     : float
+    Lcz     : float
+    h0      : float
+    Fy      : float
+    E       : float
+    Ix      : float
+    Iy      : float
+    ix      : float
+    iy      : float
+    Ag      : float
+    x0      : float
+    y0      : float
+    J       : float
+    G       : float
+    Symt    : int   = field(default=2)
+    phi_d   : float = field(default=0.9)
+    Pn      : float = field(init=False)
+    Cw      : float = field(init=False)
+    Fcr_e   : float = field(init=False)
+    Fcr_ltb : float = field(init=False)
+    Fcr     : float = field(init=False)
+    Fex     : float = field(init=False)
+    Fey     : float = field(init=False)
+    Fez     : float = field(init=False)
+    r0      : float = field(init=False)
+    H       : float = field(init=False)
 
 
-    def EulerBurkulmaYükü(L : float, I : float,i : float , K:float = 1.0 , E : float = 2*10**5) -> float:
+
+    def __post_init__(self) -> float:
+        self.Cw = self.get_Cw(self.Iy,self.h0)
+        self.Fex = self.GetF_e(self.E,self.Lcx,self.ix)
+        self.Fey = self.GetF_e(self.E,self.Lcy,self.iy)
+        self.r0   = self.Getr0(self.x0,self.y0,self.Ix,self.Iy,self.Ag)
+        self.H    = self.GetH(self.x0,self.y0,self.r0)
+        self.Fez  = self.GetF_ez(self.E,self.Cw,self.G,self.J,self.Lcz,self.Ag,self.r0)
+        Fcr_ex = self.FlexureBucklingLoadWithoutSlendernessMember(self.Lcx,self.ix,self.Fy,self.E)
+        Fcr_ey = self.FlexureBucklingLoadWithoutSlendernessMember(self.Lcy,self.iy,self.Fy,self.E)
+        Fcrx_ltb= self.LateralTorsionalBucklingLoadWithoutSlendernessMember(
+            self.Lcx,
+            self.Fy,
+            self.ix,
+            self.E,
+            self.Cw,
+            self.Lcz,
+            self.Ix,
+            self.Iy,
+            self.Fex,
+            self.Fey,
+            self.Fez,
+            self.H,
+            self.Symt
+        )
+        Fcry_ltb= self.LateralTorsionalBucklingLoadWithoutSlendernessMember(
+            self.Lcy,
+            self.Fy,
+            self.iy,
+            self.E,
+            self.Cw,
+            self.Lcz,
+            self.Ix,
+            self.Iy,
+            self.Fex,
+            self.Fey,
+            self.Fez,
+            self.H,
+            self.Symt
+        )
+        
+        self.Fcr_e = min(Fcr_ex,Fcr_ey)
+        self.Fcr_ltb = min(Fcrx_ltb,Fcry_ltb)
+        self.Fcr = min(self.Fcr_e,self.Fcr_ltb)
+        
+        self.Pn = self.CompressionStrength(self.Fcr,self.Ag)
+        self.CheckCompressionStrength(self.Pn,self.Pu,self.phi_d)
+
+
+    
+
+    def EulerBurkulmaYükü(self,L : float, I : float,i : float , K:float = 1.0 , E : float = 2*10**5) -> float:
         """
         Euler burkulma yükünü hesaplar
         L : float, 
@@ -327,38 +406,24 @@ class Compression:
         Returns:
             Fcr (float) -> Euler burkulma yükü
         """
-        Fcr = math.pi**2 * E * I / (K*L/i)**2
+        Fcr = pi**2 * E * I / (K*L/i)**2
         return Fcr
     
-    def GetF_ex(E:float,Lcx:float,ix:float) -> float:
+    def GetF_e(self,E:float,Lc:float,i:float) -> float:
         """
         _summary_
 
         Arguments:
             E -- _description_
-            Lcx -- _description_
-            ix -- _description_
+            Lc -- _description_
+            i -- _description_
 
         Returns:
             _description_
         """
-        return (math.pi**2 * E)/(Lcx/ix)**2
+        return (pi**2 * E)/(Lc/i)**2
     
-    def GetF_ey(E:float,Lcy:float,iy:float) -> float:
-        """
-        _summary_
-
-        Arguments:
-            E -- _description_
-            Lcy -- _description_
-            iy -- _description_
-
-        Returns:
-            _description_
-        """
-        return (math.pi**2 * E)/(Lcy/iy)**2
-    
-    def Getr0(x0:float,y0:float,Ix:float,Iy:float,Ag:float) -> float:
+    def Getr0(self,x0:float,y0:float,Ix:float,Iy:float,Ag:float) -> float:
         """
         polar radius of gyration about the shear center
 
@@ -372,12 +437,10 @@ class Compression:
         Returns:
             r0 -- polar radius of gyration about the shear center
         """
-        first = x0**2 + y0**2
-        second = (Ix + Iy)/Ag
-        r0 = math.sqrt(first+second)
+        r0 = sqrt((x0**2 + y0**2) + ((Ix + Iy)/Ag))
         return r0
 
-    def GetH(x0 : float, y0 : float, r0 : float) -> float:
+    def GetH(self,x0 : float, y0 : float, r0 : float) -> float:
         """
         flexural constant
 
@@ -392,7 +455,7 @@ class Compression:
         H = 1 - (x0**2 + y0**2)/r0**2
         return H
 
-    def GetF_ez(E:float,Cw:float,G:float,J:float,Lcz:float,Ag:float, r0:float)->float:
+    def GetF_ez(self,E:float,Cw:float,G:float,J:float,Lcz:float,Ag:float, r0:float)->float:
         """
         _summary_
 
@@ -408,7 +471,7 @@ class Compression:
         Returns:
             _description_
         """
-        first = (math.pi**2 * E * Cw/Lcz**2) + (G*J)
+        first = (pi**2 * E * Cw/Lcz**2) + (G*J)
         second = 1 / (Ag * r0**2)
         Fez = first*second
         return Fez
@@ -428,7 +491,7 @@ class Compression:
         Cw = (Iy * h0**2) / 4
         return Cw
     
-    def LateralTorsionalBucklingLoadWithoutSlendernessMember(Lb:float,
+    def LateralTorsionalBucklingLoadWithoutSlendernessMember(self,Lb:float,
                                                        Fy:float,
                                                        i:float,
                                                        E:float,
@@ -463,11 +526,11 @@ class Compression:
        
         Fe = 0.0
         if Symt == 2:
-            Fe = (math.pi**2 * E * Cw/Lcz**2)*(1/(Ix+Iy))
+            Fe = (pi**2 * E * Cw/Lcz**2)*(1/(Ix+Iy))
             print(f"Çift eksende simetrik kesit ==>\nFe = (pi**2 * E * Cw/Lcz**2)*(1/(Ix+Iy)) = {Fe} ")
         if Symt == 1:
             indis = (4*Fey*Fez*H)/(Fey + Fez)**2
-            Fe = ((Fey + Fez)/(2*H)) * (1 - math.sqrt(1 - indis))
+            Fe = ((Fey + Fez)/(2*H)) * (1 - sqrt(1 - indis))
             print(f"Tek eksende simetrik kesit ==>\nFe = ((Fey + Fez)/(2*H)) * (1 - (1 - (4*Fey*Fez*H)/(Fey + Fez)**2)**0.5)) = {Fe} ")
         if Symt == 0:
             first = f"(Fe-{round(Fex,3)}) * (Fe-{round(Fey,3)}) * (Fe-{round(Fez,3)})"
@@ -475,7 +538,7 @@ class Compression:
             third = f"Fe^2 * {round(Fex,3)}) * (y0/ro)^2"
             print(f"Kesitin simetrik ekseni yoktur denklem takımı çözülmelidir.\n{first} - {second} - {third}")
         
-        Trashold = 4.71*math.sqrt(E/Fy)
+        Trashold = 4.71*sqrt(E/Fy)
         if (Lb/i) <= Trashold:
             Fcr  = 0.658**(Fy/Fe) * Fy
         else:
@@ -483,37 +546,38 @@ class Compression:
 
         return Fcr
 
-    def FlexureBucklingLoadWithoutSlendernessMember(L : float, i : float, Fy : float, E : float) -> float:
+    def FlexureBucklingLoadWithoutSlendernessMember(self,L : float, i : float, Fy : float, E : float) -> float:
         """
         _summary_
 
         Returns:
             _description_
         """
-        Fe = math.pi**2 * E /(L/i)**2
-        Trashold = 4.71*math.sqrt(E/Fy)
+        Fe = pi**2 * E /(L/i)**2
+        Trashold = 4.71*sqrt(E/Fy)
         if (L/i) <= Trashold:
             Fcr  = 0.658**(Fy/Fe) * Fy
+            print(f"(L/i) =({L}/{i}) = {L/i} <= {Trashold} = 4.71*sqrt(E/Fy)  ==> Fcr  = 0.658**(Fy/Fe) * Fy ==>  Fcr  = 0.658**({Fy}/{Fe}) * {Fy} = {Fcr}")
         else:
             Fcr = 0.877 * Fe
+            print(f"(L/i) =({L}/{i}) = {L/i} > {Trashold} = 4.71*sqrt(E/Fy)  ==> Fcr = 0.877 * Fe ==>  Fcr = 0.877 * {Fe} = {Fcr}")
         return Fcr
     
-    def CompressionStrength(Fcr_e : float, Fcr_ebb:float, Ag : float) -> float:
+    def CompressionStrength(self,Fcr : float, Ag : float) -> float:
         """
         _summary_
 
         Arguments:
-            Fcr_e -- Eğilme burkulması yükü
-            Fcr_ebb -- Eğilmeli burulmalı burkulma yükü
+            Fcr -- Burkulma yükü
             Ag -- Brüt kesit alanı
 
         Returns:
             Basınç kapasitesi
         """
-        Fcr = min(Fcr_e,Fcr_ebb)
-        return Fcr*Ag
+        Pn = Fcr*Ag
+        return 
 
-    def CheckCompressionStrength(Pn:float,Pu:float,fi_d:float) -> None:
+    def CheckCompressionStrength(self,Pn:float,Pu:float,fi_d:float) -> None:
 
         if Pu>fi_d*Pn:
             print(f"Pu = {Pu} > {fi_d*Pn}= fi_d*Pn Basınç kapasitesi yetersizdir...")
@@ -570,6 +634,7 @@ class Flexure:
         self.Mp = self.PlasticFlexureCapacity(self.Fy,self.Zx)
         self.FlexureCapacityCheck(self.Mu,self.Mn_ltb,self.Mp,self.fi_d)
 
+    @handcalc(jupyter_display=True)
     def Get_Cw(self,Iy : float, h0 : float) -> float:
         """
         Warping katsayısını hesaplar I tipi kesitler için
@@ -585,6 +650,7 @@ class Flexure:
         Cw = (Iy * h0**2) / 4
         return Cw
     
+    @handcalc(jupyter_display=True)
     def Get_i_ts(self,Iy : float, Cw : float, Sx : float) -> float:
         """
         Etkin atalet yarıçapını hesaplar\nTBDY Denk. 9.8a kullanılmıştır. Dilenirse 9.8b kullanılabilir.
@@ -597,9 +663,10 @@ class Flexure:
         Returns:
             Etkin atalet yarıçapı
         """
-        i_ts = ((math.sqrt(Iy*Cw) / Sx))**0.5
+        i_ts = ((sqrt(Iy*Cw) / Sx))**0.5
         return i_ts
 
+    @handcalc(jupyter_display=True)
     def Get_Lp(self,i_y : float,Fy:float, E : float = 2*10**5) -> float:
         """LTB(Yanal burulmali burkulma) olmayacak uzunluğu verir
 
@@ -611,11 +678,10 @@ class Flexure:
         Returns:
             float: LTB olusmayan serbest boy siniri
         """
-        a = E/Fy
-        b = math.sqrt(a)
-        Lp = 1.76 * i_y * b
+        Lp = 1.76 * i_y * (sqrt(E/Fy))
         return round(Lp,2)
 
+   
     def Get_Lr(self,
                i_ts : float,
                J : float,
@@ -638,12 +704,14 @@ class Flexure:
         Returns:
             float: Elastik LTB serbest boy siniri
         """
-        a = J*c/(Sx*ho)
-        b = 6.76 * (0.7 * Fy / E)**2
-        first = math.sqrt(a**2 + b)
-        Lr = 1.95 * i_ts * (E / (0.7 * Fy)) * math.sqrt(a + first)
+        # a = (J*c/(Sx*ho))
+        # b = (6.76 * (0.7 * Fy / E)**2)
+        # first = sqrt(a**2 + b)
+        # Lr = 1.95 * i_ts * (E / (0.7 * Fy)) * sqrt(a + first)    
+        Lr = 1.95 * i_ts * (E / (0.7 * Fy)) * sqrt((J*c/(Sx*ho)) + (sqrt((J*c/(Sx*ho))**2 + (6.76 * (0.7 * Fy / E)**2))))
         return round(Lr,2)
 
+    
     def Get_Cb(self,Mmax : float, Ma : float, Mb : float, Mc : float) -> float:
         """
         _summary_
@@ -661,6 +729,7 @@ class Flexure:
         print(f"Cb = 12.5 * Mmax / (2.5 * Mmax + 3*Ma + 4*Mb + 3*Mc) = 12.5 * {Mmax} / (2.5 * {Mmax} + 3*{Ma} + 4*{Mb} + 3*{Mc}) = {round(Cb,2)}\n")
         return round(Cb,2)
 
+    
     def Get_ElasticLTB_Fcr(self,Lb : float,i_ts : float,J : float,Sx : float,ho : float ,Cb : float = 1.0 ,E : float = 2*10**5) -> float:
         """
         _summary_
@@ -680,12 +749,13 @@ class Flexure:
             _description_
         """
         print(f"Cb = {Cb}, Lb = {Lb}, its = {i_ts}")
-        a = (Cb * math.pi**2 * E) / ((Lb/i_ts)**2)
-        b = math.sqrt(1 + (0.078 * (J / (Sx * ho)) * (Lb / i_ts)**2 ))
+        a = (Cb * pi**2 * E) / ((Lb/i_ts)**2)
+        b = sqrt(1 + (0.078 * (J / (Sx * ho)) * (Lb / i_ts)**2 ))
         Fcr = a * b
         print(f" Fcr = (Cb * pi**2 * E) / ((Lb/i_ts)**2) * (1 + (0.078 * (Jc / (Sx * ho)) * (Lb / i_ts)**2 ))^0.5 = ({Cb} * pi**2 * E) / (({Lb}/{i_ts})**2) * (1 + (0.078 * ({J} / ({Sx} * {ho})) * ({Lb} / {i_ts})**2 ))^0.5 = {Fcr}")
         return Fcr
 
+    
     def LateralTorsionalBucklingCapacity(self,Lb : float, 
                                 Lp : float, 
                                 Lr : float, 
@@ -769,6 +839,7 @@ class Flexure:
         else:
             print(f"Mn*fi_d = {Mn*fi_d} >=  Mu = {Mu} ==> Eğilme kapasitesi yeterlidir...\n")
 
+    
 #Burulma kuvvet etkisindeki I profil elemanların tasarımı
 #========================================================================================================
 @dataclass
@@ -868,7 +939,7 @@ class CombineForce:
         Returns:
             Fcr (float) -- Burkulma gerilmesi
         """
-        Fcr1 = 1.23*E / (math.sqrt(L/D) * (D/t)**(5/4))
+        Fcr1 = 1.23*E / (sqrt(L/D) * (D/t)**(5/4))
         Fcr2 = 0.6*E / ((D/t)**(3/2))
 
         Fcr = max(Fcr1,Fcr2)
@@ -888,7 +959,7 @@ class CombineForce:
         Returns:
             Burulma sabiti
         """
-        C = (math.pi * (D-t)**2 * t )/ 2
+        C = (pi * (D-t)**2 * t )/ 2
 
     def RectangularHssSectionBucklingStress(self,h : float, t : float, Fy : float, E : float) -> float:
         """
@@ -904,15 +975,15 @@ class CombineForce:
             _description_
         """
         Trashold = h/t
-        Trashold2 = 2.45 * math.sqrt(E/Fy)
-        Trashold3 = 3.07 * math.sqrt(E/Fy)
+        Trashold2 = 2.45 * sqrt(E/Fy)
+        Trashold3 = 3.07 * sqrt(E/Fy)
 
         if Trashold <= Trashold2:
             Fcr = 0.6 * Fy
         if Trashold2 < Trashold and Trashold <= Trashold3:
-            Fcr = (0.6 * Fy * (2.45 * math.sqrt(E/Fy))) / Trashold
+            Fcr = (0.6 * Fy * (2.45 * sqrt(E/Fy))) / Trashold
         if Trashold3 < Trashold and Trashold <= 260:
-            Fcr = (0.458 * math.pi**2 * E) / Trashold**2
+            Fcr = (0.458 * pi**2 * E) / Trashold**2
         
         return Fcr
 
@@ -929,7 +1000,7 @@ class CombineForce:
             Burulma sabiti
         """
 
-        C = (2* (B-t) * (H-t) * t) - (4.5 * (4-math.pi) * t**3)
+        C = (2* (B-t) * (H-t) * t) - (4.5 * (4-pi) * t**3)
 
         return C
 
@@ -1033,11 +1104,11 @@ class Concentrated:
             float: _description_
         """
         if y > d:
-            Rn = 0.8 * tw**2 * (1 + 3*(Lb/d)*(tw/tf)**1.5) * math.sqrt((E*Fyw*tf)/tw)
+            Rn = 0.8 * tw**2 * (1 + 3*(Lb/d)*(tw/tf)**1.5) * sqrt((E*Fyw*tf)/tw)
         if y <= d and Lb/d <= 0.2:
-            Rn = 0.4 * tw**2 * (1 + 3*(Lb/d)*(tw/tf)**1.5) * math.sqrt((E*Fyw*tf)/tw)
+            Rn = 0.4 * tw**2 * (1 + 3*(Lb/d)*(tw/tf)**1.5) * sqrt((E*Fyw*tf)/tw)
         if y <= d and Lb/d > 0.2:
-            Rn = 0.4 * tw**2 * (1 + 3*((4*Lb/d)-0.2)*(tw/tf)**1.5) * math.sqrt((E*Fyw*tf)/tw)
+            Rn = 0.4 * tw**2 * (1 + 3*((4*Lb/d)-0.2)*(tw/tf)**1.5) * sqrt((E*Fyw*tf)/tw)
         return Rn
 
     def WebSideswayBuckling(self,h : float, tw : float, Lb : float, bf : float, Cr : float, tf : float, CompFlangeRestrainedRotation : bool) -> float:
@@ -1088,9 +1159,9 @@ class Concentrated:
             float: _description_
         """
         if y >= d/2:
-            Rn = (24 * tw**3 * math.sqrt(E*Fyw))/h
+            Rn = (24 * tw**3 * sqrt(E*Fyw))/h
         else:
-            Rn = (12 * tw**3 * math.sqrt(E*Fyw))/h
+            Rn = (12 * tw**3 * sqrt(E*Fyw))/h
         
         return Rn
     
