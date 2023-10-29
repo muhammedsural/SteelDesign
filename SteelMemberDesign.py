@@ -365,12 +365,9 @@ class Compression:
         print("Y ekseninde kritik eğilmeli-burulmalı burkulma yükü:")
         Fcry_ltb= self.LateralTorsionalBucklingLoadWithoutSlendernessMember(self.Lcy,self.Fy,self.iy,self.E,self.Cw,self.Lcz,self.Ix,self.Iy,self.Fex,self.Fey,self.Fez,self.H,self.Symt)
         
-        self.Fcr_e = min(Fcr_ex,Fcr_ey)
-        print(f"Dikkate alınacak elastik eğilme burkulması yükü ==> min(Fcr_ex,Fcr_ey) = min({Fcr_ex},{Fcr_ey}) = {self.Fcr_e}")
-        self.Fcr_ltb = min(Fcrx_ltb,Fcry_ltb)
-        print(f"Dikkate alınacak elastik eğilmeli-burulmalı burkulma yükü ==> min(Fcrx_ltb,Fcry_ltb) = min({Fcrx_ltb},{Fcry_ltb}) = {self.Fcr_ltb}")
-        self.Fcr = min(self.Fcr_e,self.Fcr_ltb)
-        print(f"Dikkate alınacak kritik burkulma yükü ==> min(Fcr_e,Fcr_ltb) = min({self.Fcr_e},{self.Fcr_ltb}) = {self.Fcr}")
+        self.Fcr_e = self.GetMinFcr_e(Fcr_ex,Fcr_ey)
+        self.Fcr_ltb = self.GetMinFcr_ltb(Fcrx_ltb,Fcry_ltb)
+        self.Fcr = self.GetMinFcr(self.Fcr_e,self.Fcr_ltb)
         
         self.Pn = self.CompressionStrength(self.Fcr,self.Ag)
         self.CheckCompressionStrength(self.Pn,self.Pu,self.phi_d)
@@ -391,38 +388,24 @@ class Compression:
         Fcr = pi**2 * E * I / (K*L/i)**2
         return Fcr
     
-    @handcalc(jupyter_display=True)
-    def GetFlexureBucklingF_e(self,E:float,Lc:float,i:float) -> float:
-        """
-        _summary_
-
-        Arguments:
-            E -- _description_
-            Lc -- _description_
-            i -- _description_
-
-        Returns:
-            _description_
-        """
-        Fe = (pi**2 * E)/(Lc/i)**2
-        return Fe
     
     def Getr0(self,x0:float,y0:float,Ix:float,Iy:float,Ag:float) -> float:
-        """
-        polar radius of gyration about the shear center
+            """
+            polar radius of gyration about the shear center
 
-        Arguments:
-            x0 -- _description_
-            y0 -- _description_
-            Ix -- _description_
-            Iy -- _description_
-            Ag -- _description_
+            Arguments:
+                x0 -- _description_
+                y0 -- _description_
+                Ix -- _description_
+                Iy -- _description_
+                Ag -- _description_
 
-        Returns:
-            r0 -- polar radius of gyration about the shear center
-        """
-        r0 = sqrt((x0**2 + y0**2) + ((Ix + Iy)/Ag))
-        return r0
+            Returns:
+                r0 -- polar radius of gyration about the shear center
+            """
+            r0 = sqrt((x0**2 + y0**2) + ((Ix + Iy)/Ag))
+            return r0
+    
 
     def GetH(self,x0 : float, y0 : float, r0 : float) -> float:
         """
@@ -438,6 +421,7 @@ class Compression:
         """
         H = 1 - (x0**2 + y0**2)/r0**2
         return H
+    
 
     def GetF_ez(self,E:float,Cw:float,G:float,J:float,Lcz:float,Ag:float, r0:float)->float:
         """
@@ -455,11 +439,10 @@ class Compression:
         Returns:
             _description_
         """
-        first = (pi**2 * E * Cw/Lcz**2) + (G*J)
-        second = 1 / (Ag * r0**2)
-        Fez = first*second
+        Fez = ((pi**2 * E * Cw/Lcz**2) + (G*J)) * (1 / (Ag * r0**2))
         return Fez
-   
+    
+
     def get_Cw(self,Iy : float, h0 : float) -> float:
         """
         Warping katsayısını hesaplar I tipi kesitler için
@@ -474,19 +457,40 @@ class Compression:
         """
         Cw = (Iy * h0**2) / 4
         return Cw
+ 
+    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    def GetFlexureBucklingF_e(self,E:float,Lc:float,i:float) -> float:
+        """
+        _summary_
+
+        Arguments:
+            E -- _description_
+            Lc -- _description_
+            i -- _description_
+
+        Returns:
+            _description_
+        """
+        Fe = (pi**2 * E)/(Lc/i)**2
+        return Fe
     
-    def LateralTorsionalBucklingLoadWithoutSlendernessMember(self,Lb:float,
-                                                       Fy:float,
-                                                       i:float,
-                                                       E:float,
-                                                       Cw:float,
-                                                       Lcz:float,
-                                                       Ix,Iy,
-                                                       Fex:float,
-                                                       Fey:float,
-                                                       Fez:float,
-                                                       H:float,
-                                                       Symt:int) -> float:
+    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    def GetMinFcr_e(self,Fcr_ex,Fcr_ey) -> float:
+        Fcr_e = min(Fcr_ex,Fcr_ey)
+        return Fcr_e
+    
+    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    def GetMinFcr_ltb(self,Fcrx_ltb,Fcry_ltb) -> float:
+        Fcr_ltb = min(Fcrx_ltb,Fcry_ltb)
+        return Fcr_ltb
+    
+    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    def GetMinFcr(self,Fcr_e,Fcr_ltb) -> float:
+        Fcr = min(Fcr_e,Fcr_ltb)
+        return Fcr
+   
+    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    def LateralTorsionalBucklingLoadWithoutSlendernessMember(self, Lb:float, Fy:float, i:float, E:float, Cw:float, Lcz:float, Ix:float, Iy:float, Fex:float, Fey:float, Fez:float, H:float, Symt:int) -> float:
         """_summary_
 
         Args:
@@ -506,30 +510,31 @@ class Compression:
 
         Returns:
             float: _description_
-        """
-       
-        Fe = 0.0
-        if Symt == 2:
-            Fe = (pi**2 * E * Cw/Lcz**2)*(1/(Ix+Iy))
-            print(f"Çift eksende simetrik kesit ==>\nFe = (pi**2 * E * Cw/Lcz**2)*(1/(Ix+Iy)) = {Fe} ")
-        if Symt == 1:
-            indis = (4*Fey*Fez*H)/(Fey + Fez)**2
-            Fe = ((Fey + Fez)/(2*H)) * (1 - sqrt(1 - indis))
-            print(f"Tek eksende simetrik kesit ==>\nFe = ((Fey + Fez)/(2*H)) * (1 - (1 - (4*Fey*Fez*H)/(Fey + Fez)**2)**0.5)) = {Fe} ")
+        
         if Symt == 0:
             first = f"(Fe-{round(Fex,3)}) * (Fe-{round(Fey,3)}) * (Fe-{round(Fez,3)})"
             second = f"Fe^2 * (Fe-{round(Fey,3)}) * (x0/r0)^2"
             third = f"Fe^2 * {round(Fex,3)}) * (y0/ro)^2"
             print(f"Kesitin simetrik ekseni yoktur denklem takımı çözülmelidir.\n{first} - {second} - {third}")
+        """
+       
+        Fe = 0.0
+
+        if Symt == 2:
+            Fe = (pi**2 * E * Cw/Lcz**2)*(1/(Ix+Iy))
+        if Symt == 1:
+            Fe = ((Fey + Fez)/(2*H)) * (1 - sqrt(1 - ((4*Fey*Fez*H)/(Fey + Fez)**2)))
         
         Trashold = 4.71*sqrt(E/Fy)
-        if (Lb/i) <= Trashold:
+        ratio = (Lb/i)
+        if ratio <= Trashold:
             Fcr  = 0.658**(Fy/Fe) * Fy
-        else:
+        if ratio > Trashold:
             Fcr = 0.877 * Fe
 
         return Fcr
 
+    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
     def FlexureBucklingLoadWithoutSlendernessMember(self,Fe : float, L : float, i : float, Fy : float, E : float) -> float:
         """_summary_
 
@@ -544,15 +549,14 @@ class Compression:
             float: _description_
         """
         Trashold = 4.71*sqrt(E/Fy)
-        if (L/i) <= Trashold:
+        ratio = (L/i)
+        if  ratio <= Trashold:
             Fcr  = 0.658**(Fy/Fe) * Fy
-            print(f"(L/i) =({L}/{i}) = {L/i} <= {Trashold} = 4.71*(E/Fy)**0.5  ==> Fcr  = 0.658**(Fy/Fe) * Fy ==>  Fcr  = 0.658**({Fy}/{Fe}) * {Fy} = {Fcr}")
-        else:
+        if  ratio > Trashold:
             Fcr = 0.877 * Fe
-            print(f"(L/i) =({L}/{i}) = {L/i} > {Trashold} = 4.71*(E/Fy)**0.5  ==> Fcr = 0.877 * Fe ==>  Fcr = 0.877 * {Fe} = {Fcr}")
         return Fcr
     
-    @handcalc(jupyter_display=True)
+    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
     def CompressionStrength(self,Fcr : float, Ag : float) -> float:
         """
         _summary_
@@ -567,12 +571,14 @@ class Compression:
         Pn = Fcr*Ag
         return Pn
 
-    def CheckCompressionStrength(self,Pn:float,Pu:float,fi_d:float) -> None:
-
-        if Pu>fi_d*Pn:
-            print(f"Pu = {Pu} > {fi_d*Pn}= fi_d*Pn Basınç kapasitesi yetersizdir...")
-        else:
-            (f"Pu = {Pu} <= {fi_d*Pn}= fi_d*Pn Basınç kapasitesi yeterlidir...")
+    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    def CheckCompressionStrength(self,Pn:float,Pu:float,phi_d:float) -> None:
+        capacity = round(phi_d*Pn,3)
+        if Pu > capacity:
+            text = f"{Pu/10**3}kN > {capacity/10**3}kN--Basınc kapasitesi yetersizdir..."
+        if Pu <= capacity:
+            text = f"{Pu/10**3}kN <= {capacity/10**3}kN-- Basınc kapasitesi yeterlidir..."
+        return text
 
 
 #Eğilme kuvveti etkisindeki I profil elemanların tasarımı
