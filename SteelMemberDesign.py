@@ -346,54 +346,36 @@ class Compression:
 
 
     def __post_init__(self) -> float:
-        self.Cw = self.get_Cw(self.Iy,self.h0)
-        self.Fex = self.GetF_e(self.E,self.Lcx,self.ix)
-        self.Fey = self.GetF_e(self.E,self.Lcy,self.iy)
+        self.Cw   = self.get_Cw(self.Iy,self.h0)
+        print("X ekseninde elastik eğilme burkulma yükü:")
+        self.Fex  = self.GetFlexureBucklingF_e(self.E,self.Lcx,self.ix)
+        print("Y ekseninde elastik eğilme burkulma yükü:")
+        self.Fey  = self.GetFlexureBucklingF_e(self.E,self.Lcy,self.iy)
         self.r0   = self.Getr0(self.x0,self.y0,self.Ix,self.Iy,self.Ag)
         self.H    = self.GetH(self.x0,self.y0,self.r0)
         self.Fez  = self.GetF_ez(self.E,self.Cw,self.G,self.J,self.Lcz,self.Ag,self.r0)
-        Fcr_ex = self.FlexureBucklingLoadWithoutSlendernessMember(self.Lcx,self.ix,self.Fy,self.E)
-        Fcr_ey = self.FlexureBucklingLoadWithoutSlendernessMember(self.Lcy,self.iy,self.Fy,self.E)
-        Fcrx_ltb= self.LateralTorsionalBucklingLoadWithoutSlendernessMember(
-            self.Lcx,
-            self.Fy,
-            self.ix,
-            self.E,
-            self.Cw,
-            self.Lcz,
-            self.Ix,
-            self.Iy,
-            self.Fex,
-            self.Fey,
-            self.Fez,
-            self.H,
-            self.Symt
-        )
-        Fcry_ltb= self.LateralTorsionalBucklingLoadWithoutSlendernessMember(
-            self.Lcy,
-            self.Fy,
-            self.iy,
-            self.E,
-            self.Cw,
-            self.Lcz,
-            self.Ix,
-            self.Iy,
-            self.Fex,
-            self.Fey,
-            self.Fez,
-            self.H,
-            self.Symt
-        )
+        
+        print("X ekseninde kritik eğilme burkulma yükü:")
+        Fcr_ex = self.FlexureBucklingLoadWithoutSlendernessMember(self.Fex, self.Lcx, self.ix, self.Fy, self.E)
+        print("Y ekseninde kritik eğilme burkulma yükü:")
+        Fcr_ey = self.FlexureBucklingLoadWithoutSlendernessMember(self.Fey, self.Lcy, self.iy, self.Fy, self.E)
+        
+        print("X ekseninde kritik eğilmeli-burulmalı burkulma yükü:")
+        Fcrx_ltb= self.LateralTorsionalBucklingLoadWithoutSlendernessMember(self.Lcx,self.Fy,self.ix,self.E,self.Cw,self.Lcz,self.Ix,self.Iy,self.Fex,self.Fey,self.Fez,self.H,self.Symt)
+        print("Y ekseninde kritik eğilmeli-burulmalı burkulma yükü:")
+        Fcry_ltb= self.LateralTorsionalBucklingLoadWithoutSlendernessMember(self.Lcy,self.Fy,self.iy,self.E,self.Cw,self.Lcz,self.Ix,self.Iy,self.Fex,self.Fey,self.Fez,self.H,self.Symt)
         
         self.Fcr_e = min(Fcr_ex,Fcr_ey)
+        print(f"Dikkate alınacak elastik eğilme burkulması yükü ==> min(Fcr_ex,Fcr_ey) = min({Fcr_ex},{Fcr_ey}) = {self.Fcr_e}")
         self.Fcr_ltb = min(Fcrx_ltb,Fcry_ltb)
+        print(f"Dikkate alınacak elastik eğilmeli-burulmalı burkulma yükü ==> min(Fcrx_ltb,Fcry_ltb) = min({Fcrx_ltb},{Fcry_ltb}) = {self.Fcr_ltb}")
         self.Fcr = min(self.Fcr_e,self.Fcr_ltb)
+        print(f"Dikkate alınacak kritik burkulma yükü ==> min(Fcr_e,Fcr_ltb) = min({self.Fcr_e},{self.Fcr_ltb}) = {self.Fcr}")
         
         self.Pn = self.CompressionStrength(self.Fcr,self.Ag)
         self.CheckCompressionStrength(self.Pn,self.Pu,self.phi_d)
 
 
-    
 
     def EulerBurkulmaYükü(self,L : float, I : float,i : float , K:float = 1.0 , E : float = 2*10**5) -> float:
         """
@@ -409,7 +391,8 @@ class Compression:
         Fcr = pi**2 * E * I / (K*L/i)**2
         return Fcr
     
-    def GetF_e(self,E:float,Lc:float,i:float) -> float:
+    @handcalc(jupyter_display=True)
+    def GetFlexureBucklingF_e(self,E:float,Lc:float,i:float) -> float:
         """
         _summary_
 
@@ -421,7 +404,8 @@ class Compression:
         Returns:
             _description_
         """
-        return (pi**2 * E)/(Lc/i)**2
+        Fe = (pi**2 * E)/(Lc/i)**2
+        return Fe
     
     def Getr0(self,x0:float,y0:float,Ix:float,Iy:float,Ag:float) -> float:
         """
@@ -546,23 +530,29 @@ class Compression:
 
         return Fcr
 
-    def FlexureBucklingLoadWithoutSlendernessMember(self,L : float, i : float, Fy : float, E : float) -> float:
-        """
-        _summary_
+    def FlexureBucklingLoadWithoutSlendernessMember(self,Fe : float, L : float, i : float, Fy : float, E : float) -> float:
+        """_summary_
+
+        Args:
+            Fe (float): _description_
+            L (float): _description_
+            i (float): _description_
+            Fy (float): _description_
+            E (float): _description_
 
         Returns:
-            _description_
+            float: _description_
         """
-        Fe = pi**2 * E /(L/i)**2
         Trashold = 4.71*sqrt(E/Fy)
         if (L/i) <= Trashold:
             Fcr  = 0.658**(Fy/Fe) * Fy
-            print(f"(L/i) =({L}/{i}) = {L/i} <= {Trashold} = 4.71*sqrt(E/Fy)  ==> Fcr  = 0.658**(Fy/Fe) * Fy ==>  Fcr  = 0.658**({Fy}/{Fe}) * {Fy} = {Fcr}")
+            print(f"(L/i) =({L}/{i}) = {L/i} <= {Trashold} = 4.71*(E/Fy)**0.5  ==> Fcr  = 0.658**(Fy/Fe) * Fy ==>  Fcr  = 0.658**({Fy}/{Fe}) * {Fy} = {Fcr}")
         else:
             Fcr = 0.877 * Fe
-            print(f"(L/i) =({L}/{i}) = {L/i} > {Trashold} = 4.71*sqrt(E/Fy)  ==> Fcr = 0.877 * Fe ==>  Fcr = 0.877 * {Fe} = {Fcr}")
+            print(f"(L/i) =({L}/{i}) = {L/i} > {Trashold} = 4.71*(E/Fy)**0.5  ==> Fcr = 0.877 * Fe ==>  Fcr = 0.877 * {Fe} = {Fcr}")
         return Fcr
     
+    @handcalc(jupyter_display=True)
     def CompressionStrength(self,Fcr : float, Ag : float) -> float:
         """
         _summary_
@@ -575,7 +565,7 @@ class Compression:
             Basınç kapasitesi
         """
         Pn = Fcr*Ag
-        return 
+        return Pn
 
     def CheckCompressionStrength(self,Pn:float,Pu:float,fi_d:float) -> None:
 
@@ -1254,32 +1244,52 @@ if __name__ == "__main__":
 
     #Concentrated Force Test
     #===========================================
-    Zx = 2.9*10**6 #mm^3
-    Ix = 762*10**6 #mm^4
-    d  = 602 #mm
-    tw = 10.5#mm
-    tf = 14.9#mm
-    bf = 228 #mm
-    k  = 27.7 #mm
-    Fy = 355 #MPa
-    y  = 2300
-    Lb = 150
-    E  = 2*10**5
-    h  = d- 2*tf
-    Cr = 6.6*10**6
+    # Geometri
+    d              = 440            #mm     -- Kesit yüksekliği
+    h              = 344            #mm     -- Gövde levhası yüksekliği
+    tw             = 11.5           #mm     -- Gövde levhası et kalınlığı
+    bf_compression = 300            #mm     -- Basınç etkisindeki başlık genişliği
+    bf_tension     = 300            #mm     -- Çekme etkisindeki başlık genişliği
+    tf_comp        = 21             #mm     -- Basınç etkisindeki başlık et kalınlığı
+    tf_tension     = 21             #mm     -- Çekme etkisindeki başlık et kalınlığı
+    a_stiffner     = 0              #mm     -- Rijitleştirme levhalarının ağırlık merkezleri arasındaki mesafe
+    h0             = 281            #mm     -- Enkesit basliklarinin agirlik merkezleri arasindaki uzaklik
+    Lb_ltb         = 10000          #mm     -- LTB olusmayan serbest boy siniri
 
-    conca = Concentrated()
-    Rn_webyielding = conca.WebLocalYielding(Lb,k,Fy,tw,y,d)
-    print(Rn_webyielding/10**3)
+    #Mukavemet özellikleri
+    iy             = 72.9           #mm     -- Kesitin y eksenine göre atalet yaricapi
+    Jc             = 243.8*10**4    #mm^4   -- Burulma sabiti
+    Sx             = 2896*10**3     #mm^3   -- X ekseni etrafında elastik kesit mukavemet momenti
+    Zx             = 3216*10**3     #mm^3   -- X ekseni etrafında plastik kesit mukavemet momenti
+    Iy             = 8563 *10**4    #mm^4   -- Y eksenindeki atalet momenti
+    Ix             = 63720 *10**4   #mm^4   -- Y eksenindeki atalet momenti
 
-    Rn_webcrippling = conca.WebLocalCrippling(y,d,Lb,tw,tf,E,Fy)
-    print(Rn_webcrippling/10**3)
+    # Malzeme özellikleri
+    Fy             = 355            #N/mm^2 -- Kesit malzemesinin akma dayanimi 
+    E              = 2*10**5        #N/mm   -- Kesit malzemesinin elastisite modulu. Defaults to 2*10**5.
 
-    Rn_WebSideswayBuckling = conca.WebSideswayBuckling(h,tw,Lb,bf,Cr,tf,CompFlangeRestrainedRotation=True)
-    print(Rn_WebSideswayBuckling/10**3)
+    # Kuvvetler
+    Vu             = 1200 * 10**3   #N      -- Kesite gelen kesme
+    Mu             = 800 * 10**6    #Nmm    -- Kesite gelen moment
+    Mmax           = 1              #Nmm    -- absolute value of the maximum moment in the unbraced segment
+    Ma             = 0.75           #Nmm    -- absolute value of moment at the quarter-point of the unbraced segment
+    Mb             = 1              #Nmm    -- absolute value of moment at the centerline of the unbraced segment
+    Mc             = 0.75           #Nmm    -- absolute value of moment at three-quarter point of the unbraced segment
 
-    Rn_WebCompressionBuckling = conca.WebCompressionBuckling(y,d,tw,h,E,Fy)
-    print(Rn_WebCompressionBuckling/10**3)
+    Comp = Compression(4860*10**3, 9000, 4500, 9000, h0,Fy,E,Ix,Iy,191.40,73.30,21800,10,10,Jc,300)
+
+    # conca = Concentrated()
+    # Rn_webyielding = conca.WebLocalYielding(Lb,k,Fy,tw,y,d)
+    # print(Rn_webyielding/10**3)
+
+    # Rn_webcrippling = conca.WebLocalCrippling(y,d,Lb,tw,tf,E,Fy)
+    # print(Rn_webcrippling/10**3)
+
+    # Rn_WebSideswayBuckling = conca.WebSideswayBuckling(h,tw,Lb,bf,Cr,tf,CompFlangeRestrainedRotation=True)
+    # print(Rn_WebSideswayBuckling/10**3)
+
+    # Rn_WebCompressionBuckling = conca.WebCompressionBuckling(y,d,tw,h,E,Fy)
+    # print(Rn_WebCompressionBuckling/10**3)
 
     # Rv_WebPanelZoneShear = conca.WebPanelZoneShear(Pu , Py , dc , tw , db , bcf , tcf , PanelZoneConsideredAnalysis = False)
     # conca.CheckWebPanelZoneShear(Mu1,Mu2,dm1,dm2,Vu)
