@@ -630,7 +630,7 @@ class Flexure:
         self.Mp = self.PlasticFlexureCapacity(self.Fy,self.Zx)
         self.FlexureCapacityCheck(self.Mu,self.Mn_ltb,self.Mp,self.fi_d)
 
-    @handcalc(jupyter_display=True)
+    @handcalc(override="short",jupyter_display=True)
     def Get_Cw(self,Iy : float, h0 : float) -> float:
         """
         Warping katsayısını hesaplar I tipi kesitler için
@@ -646,7 +646,7 @@ class Flexure:
         Cw = (Iy * h0**2) / 4
         return Cw
     
-    @handcalc(jupyter_display=True)
+    @handcalc(override="short",jupyter_display=True)
     def Get_i_ts(self,Iy : float, Cw : float, Sx : float) -> float:
         """
         Etkin atalet yarıçapını hesaplar\nTBDY Denk. 9.8a kullanılmıştır. Dilenirse 9.8b kullanılabilir.
@@ -662,7 +662,7 @@ class Flexure:
         i_ts = ((sqrt(Iy*Cw) / Sx))**0.5
         return i_ts
 
-    @handcalc(jupyter_display=True)
+    @handcalc(override="short",jupyter_display=True)
     def Get_Lp(self,i_y : float,Fy:float, E : float = 2*10**5) -> float:
         """LTB(Yanal burulmali burkulma) olmayacak uzunluğu verir
 
@@ -677,15 +677,8 @@ class Flexure:
         Lp = 1.76 * i_y * (sqrt(E/Fy))
         return round(Lp,2)
 
-   
-    def Get_Lr(self,
-               i_ts : float,
-               J : float,
-               Sx : float,
-               ho : float,
-               Fy:float, 
-               c : float = 1.0,
-               E : float = 2*10**5) -> float:
+    @handcalc(override="short",jupyter_display=True)
+    def Get_Lr(self,i_ts : float,J : float,Sx : float,ho : float,Fy:float, c : float = 1.0,E : float = 2*10**5) -> float:
         """Elastik LTB oluşumu için gerekli boy
 
         Args:
@@ -699,15 +692,16 @@ class Flexure:
 
         Returns:
             float: Elastik LTB serbest boy siniri
+            # a = (J*c/(Sx*ho))
+            # b = (6.76 * (0.7 * Fy / E)**2)
+            # first = sqrt(a**2 + b)
+            # Lr = 1.95 * i_ts * (E / (0.7 * Fy)) * sqrt(a + first)  
         """
-        # a = (J*c/(Sx*ho))
-        # b = (6.76 * (0.7 * Fy / E)**2)
-        # first = sqrt(a**2 + b)
-        # Lr = 1.95 * i_ts * (E / (0.7 * Fy)) * sqrt(a + first)    
+          
         Lr = 1.95 * i_ts * (E / (0.7 * Fy)) * sqrt((J*c/(Sx*ho)) + (sqrt((J*c/(Sx*ho))**2 + (6.76 * (0.7 * Fy / E)**2))))
         return round(Lr,2)
 
-    
+    @handcalc(override="short",jupyter_display=True)
     def Get_Cb(self,Mmax : float, Ma : float, Mb : float, Mc : float) -> float:
         """
         _summary_
@@ -722,10 +716,9 @@ class Flexure:
             _description_
         """
         Cb = (12.5 * Mmax) / (2.5 * Mmax + 3*Ma + 4*Mb + 3*Mc)
-        print(f"Cb = 12.5 * Mmax / (2.5 * Mmax + 3*Ma + 4*Mb + 3*Mc) = 12.5 * {Mmax} / (2.5 * {Mmax} + 3*{Ma} + 4*{Mb} + 3*{Mc}) = {round(Cb,2)}\n")
         return round(Cb,2)
 
-    
+    @handcalc(override="short",jupyter_display=True)
     def Get_ElasticLTB_Fcr(self,Lb : float,i_ts : float,J : float,Sx : float,ho : float ,Cb : float = 1.0 ,E : float = 2*10**5) -> float:
         """
         _summary_
@@ -744,11 +737,9 @@ class Flexure:
         Returns:
             _description_
         """
-        print(f"Cb = {Cb}, Lb = {Lb}, its = {i_ts}")
         a = (Cb * pi**2 * E) / ((Lb/i_ts)**2)
         b = sqrt(1 + (0.078 * (J / (Sx * ho)) * (Lb / i_ts)**2 ))
         Fcr = a * b
-        print(f" Fcr = (Cb * pi**2 * E) / ((Lb/i_ts)**2) * (1 + (0.078 * (Jc / (Sx * ho)) * (Lb / i_ts)**2 ))^0.5 = ({Cb} * pi**2 * E) / (({Lb}/{i_ts})**2) * (1 + (0.078 * ({J} / ({Sx} * {ho})) * ({Lb} / {i_ts})**2 ))^0.5 = {Fcr}")
         return Fcr
 
     
@@ -802,7 +793,7 @@ class Flexure:
                 print(f"Plastik moment kapasitesinden fazla olamaz {Mn} > {Mp}\n")
                 Mn = Mp
         return Mn
-
+    
     def PlasticFlexureCapacity(self,Fy : float, Zx : float):
         """
         _summary_
