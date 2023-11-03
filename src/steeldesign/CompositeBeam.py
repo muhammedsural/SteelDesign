@@ -1,8 +1,4 @@
-from handcalcs import handcalc,render
-import forallpeople as si
-si.environment("structural",top_level=True)
-
-#Moment aktarmayan kompozit kiriş ve stud çivisi hesabı
+from handcalcs import handcalc
 
 @handcalc(precision=5,jupyter_display=True)
 def calc_stud_full_interaction(b_f : float, d : float, beam_length : float,beam_As : float,beam_aralik : float,f_ck : float,Y_con:float,Fy : float =345):
@@ -23,24 +19,27 @@ def calc_stud_full_interaction(b_f : float, d : float, beam_length : float,beam_
 
     Returns:
         Tasarım Momenti
+    
+    Extras:
+        b1 ve b2 için eşit aralık kabulü yapıldı
     """
     T = beam_As*Fy /10**3  #kN
-    b1 = 2 * beam_length * 1/8 #mm Eşit aralık kabul edildi 
-    b2 = 2 * beam_aralik * 1/2 #mm Eşit aralık kabul edildi
+    b1 = 2 * beam_length * 1/8 
+    b2 = 2 * beam_aralik * 1/2
 
-    b = min(b1,b2) #mm
+    b = min(b1,b2) 
 
-    alpha = T / (0.85 * f_ck * b) #mm
-    A_conc = Y_con * b #mm
-    Y2 = Y_con - 0.5*alpha #mm
-    Y1 = (beam_As * Fy - (0.85 * f_ck * A_conc)) / (2 * Fy * b_f) #mm
+    alpha = T / (0.85 * f_ck * b) 
+    A_conc = Y_con * b 
+    Y2 = Y_con - 0.5*alpha 
+    Y1 = (beam_As * Fy - (0.85 * f_ck * A_conc)) / (2 * Fy * b_f) 
     
     
-    x = (0.85 * f_ck * A_conc *(Y1 + Y2)) / 10**6 #kNm
-    y = (2* Fy * b_f *Y1 * (Y1 /2)) / 10**6 #kNm
-    z = (beam_As * Fy * (d /2 - Y1)) / 10**6 #kNm
+    x = (0.85 * f_ck * A_conc *(Y1 + Y2)) / 10**6 
+    y = (2* Fy * b_f *Y1 * (Y1 /2)) / 10**6 
+    z = (beam_As * Fy * (d /2 - Y1)) / 10**6 
 
-    Phi_Mn = ( x + y + z) * 0.9  #kNm
+    Phi_Mn = ( x + y + z) * 0.9  
 
     return Phi_Mn
 
