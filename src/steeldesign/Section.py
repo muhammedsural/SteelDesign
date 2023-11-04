@@ -167,6 +167,22 @@ class IShapeGeometry:
 @dataclass
 class ISectionPropManager:
     """
+                              Z
+                              |
+                              |
+                    __________|____________
+                   |________  | __________ |
+                            | | |   
+                            | | |
+                            | X |
+                            | . |________________Y
+                            |   |
+                            |   |
+                            |   |
+                    ________|   |__________
+                   |______________________ |
+
+
     Arguments:
         Iz      -- Z ekseni yönündeki atalet momenti
         Iy      -- Y ekseni yönündeki atalet momenti
@@ -393,7 +409,7 @@ class ISection:
         iy      -- Y ekseni yönündeki atalet yarıçapı
         ip      -- Polar atalet yarıçapı
         its     -- Etkin atalet yarıçapı
-        Jc      -- Burulma sabiti
+        J       -- Burulma sabiti
         Wez     -- Z eksenindeki elastik mukavemet momenti
         Wey     -- Y eksenindeki elastik mukavemet momenti
         Wpx     -- Z eksenindeki elastik mukavemet momenti
@@ -421,7 +437,7 @@ class ISection:
     iy      : float
     ip      : float
     its     : float
-    Jc      : float
+    J       : float
     Wez     : float
     Wey     : float
     Wpx     : float
