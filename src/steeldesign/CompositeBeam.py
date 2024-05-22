@@ -1,6 +1,4 @@
-from handcalcs import handcalc
 
-@handcalc(precision=5,jupyter_display=True)
 def calc_stud_full_interaction(b_f : float, d : float, beam_length : float,beam_As : float,beam_aralik : float,f_ck : float,Y_con:float,Fy : float =345):
     """
     Tam etkileşimli kompozit kiriş stud çivisi sayısını hesaplar
@@ -112,7 +110,6 @@ def check_deflection(Beam : list,L : float , Pg : float,Pq : float,w_g : float =
     else:
         print(f"Sehim kontrolü sağlandı {delta_yapım} <= {L/300}. \nAyrıca, beton gerekli dayanımına ulaşıncaya kadar, \nçelik enkesitin yapım aşamasındaki sabit ve hareketli yükler altındaki eğilme dayanımı, \nYönetmelik Bölüm 9 da verilen kurallar gözönüne alınarak kontrol edilmelidir")
 
-@handcalc(jupyter_display=True)
 def efektif_doseme_genisligi(Length:float, Space:float):
     b1 = 2 * Length * 1/8 #mm Eşit aralık kabul edildi 
     b2 = 2 * Space  * 1/2 #mm Eşit aralık kabul edildi

@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from math import sqrt,pi
-from handcalcs import handcalc
 
 # Temel birimler N,mm,kg
 # Bütün fonksiyonlarda kesit özellikleri girdi olarak var bunlar bir class içerisinde toplanıp verilebilir. Kod sadeleşir ve bakımı kolaylaşır
@@ -456,7 +455,6 @@ class Compression:
         Cw = (Iy * h0**2) / 4
         return Cw
  
-    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
     def GetFlexureBucklingF_e(self,E:float,Lc:float,i:float) -> float:
         """
         _summary_
@@ -472,22 +470,22 @@ class Compression:
         Fe = (pi**2 * E)/(Lc/i)**2
         return Fe
     
-    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    
     def GetMinFcr_e(self,Fcr_ex,Fcr_ey) -> float:
         Fcr_e = min(Fcr_ex,Fcr_ey)
         return Fcr_e
     
-    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    
     def GetMinFcr_ltb(self,Fcrx_ltb,Fcry_ltb) -> float:
         Fcr_ltb = min(Fcrx_ltb,Fcry_ltb)
         return Fcr_ltb
     
-    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    
     def GetMinFcr(self,Fcr_e,Fcr_ltb) -> float:
         Fcr = min(Fcr_e,Fcr_ltb)
         return Fcr
    
-    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    
     def LateralTorsionalBucklingLoadWithoutSlendernessMember(self, Lb:float, Fy:float, i:float, E:float, Cw:float, Lcz:float, Ix:float, Iy:float, Fex:float, Fey:float, Fez:float, H:float, Symt:int) -> float:
         """_summary_
 
@@ -532,7 +530,7 @@ class Compression:
 
         return Fcr
 
-    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    
     def FlexureBucklingLoadWithoutSlendernessMember(self,Fe : float, L : float, i : float, Fy : float, E : float) -> float:
         """_summary_
 
@@ -554,7 +552,7 @@ class Compression:
             Fcr = 0.877 * Fe
         return Fcr
     
-    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    
     def CompressionStrength(self,Fcr : float, Ag : float) -> float:
         """
         _summary_
@@ -569,7 +567,7 @@ class Compression:
         Pn = Fcr*Ag
         return Pn
 
-    @handcalc(override="short",scientific_notation=True,jupyter_display=True)
+    
     def CheckCompressionStrength(self,Pn:float,Pu:float,phi_d:float) -> None:
         capacity = round(phi_d*Pn,3)
         if Pu > capacity:
@@ -622,7 +620,7 @@ class Flexure:
         self.Mn_ltb = self.LateralTorsionalBucklingCapacity(self.Mp, self.Me, self.Lb, self.Lp, self.Lr, self.Fcr, self.Sx, self.Cb)
         self.FlexureCapacityCheck(self.Mu,self.Mn_ltb,self.Mp,self.fi_d)
 
-    @handcalc(scientific_notation=True,override="short",jupyter_display=True)
+    
     def Get_Cw(self,Iy : float, h0 : float) -> float:
         """
         Warping katsayısını hesaplar I tipi kesitler için
@@ -638,7 +636,7 @@ class Flexure:
         Cw = (Iy * h0**2) / 4
         return Cw
     
-    @handcalc(scientific_notation=True,override="short",jupyter_display=True)
+    
     def Get_i_ts(self,Iy : float, Cw : float, Sx : float) -> float:
         """
         Etkin atalet yarıçapını hesaplar\nTBDY Denk. 9.8a kullanılmıştır. Dilenirse 9.8b kullanılabilir.
@@ -654,7 +652,7 @@ class Flexure:
         i_ts = ((sqrt(Iy*Cw) / Sx))**0.5
         return i_ts
 
-    @handcalc(scientific_notation=True,override="short",jupyter_display=True)
+    
     def Get_Lp(self,i_y : float,Fy:float, E : float = 2*10**5) -> float:
         """LTB(Yanal burulmali burkulma) olmayacak uzunluğu verir
 
@@ -669,7 +667,7 @@ class Flexure:
         Lp = 1.76 * i_y * (sqrt(E/Fy))
         return round(Lp,2)
 
-    @handcalc(scientific_notation=True,override="short",jupyter_display=True)
+    
     def Get_Lr(self,i_ts : float,J : float,Sx : float,ho : float,Fy:float, c : float = 1.0,E : float = 2*10**5) -> float:
         """Elastik LTB oluşumu için gerekli boy
 
@@ -693,7 +691,7 @@ class Flexure:
         Lr = 1.95 * i_ts * (E / (0.7 * Fy)) * sqrt((J*c/(Sx*ho)) + (sqrt((J*c/(Sx*ho))**2 + (6.76 * (0.7 * Fy / E)**2))))
         return round(Lr,2)
 
-    @handcalc(scientific_notation=True,override="short",jupyter_display=True)
+    
     def Get_Cb(self,Mmax : float, Ma : float, Mb : float, Mc : float) -> float:
         """
         _summary_
@@ -710,7 +708,7 @@ class Flexure:
         Cb = (12.5 * Mmax) / (2.5 * Mmax + 3*Ma + 4*Mb + 3*Mc)
         return round(Cb,2)
 
-    @handcalc(scientific_notation=True,override="short",jupyter_display=True)
+    
     def Get_ElasticLTB_Fcr(self,Lb : float,i_ts : float,J : float,Sx : float,ho : float ,Cb : float = 1.0 ,E : float = 2*10**5) -> float:
         """
         _summary_
@@ -732,12 +730,12 @@ class Flexure:
         Fcr = ((Cb * pi**2 * E) / ((Lb/i_ts)**2)) * (sqrt(1 + (0.078 * (J / (Sx * ho)) * (Lb / i_ts)**2 )))
         return Fcr
 
-    @handcalc(scientific_notation=True,override="short",jupyter_display=True)
+    
     def Get_SectionElasticMomentCapacity(self, Fy : float, Sx : float) -> float:
         Me = Fy*Sx
         return Me
     
-    @handcalc(scientific_notation=True,override="short",jupyter_display=True)
+    
     def PlasticFlexureCapacity(self,Fy : float, Zx : float) -> float:
         """
         _summary_
@@ -753,7 +751,7 @@ class Flexure:
         Mp = Fy*Zx
         return Mp
     
-    @handcalc(scientific_notation=True,override="short",jupyter_display=True)
+    
     def LateralTorsionalBucklingCapacity(self,Mp: float, Me : float,Lb : float,Lp : float,Lr : float,Fcr : float,Sx : float,Cb : float = 1.0) -> float:
         """_summary_
 
@@ -794,7 +792,7 @@ class Flexure:
         
         return Mn
     
-    @handcalc(scientific_notation=True,override="short",jupyter_display=True)
+    
     def FlexureCapacityCheck(self,Mu : float, Mn_ltb : float, Mn_plastic : float, fi_d : float ) -> None:
         """
         _summary_
