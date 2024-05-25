@@ -97,7 +97,7 @@ jobs:
 
       environment:
         name: testpypi
-        url: https://test.pypi.org/p/<TSC2018-Design>
+        url: https://test.pypi.org/p/<steeldesign>
 
       permissions:
         id-token: write  # IMPORTANT: mandatory for trusted publishing
