@@ -16,18 +16,18 @@ def StudCheck(Ds : float, tf : float, Hs : float, IsWebAlignmentWelded : bool = 
     """
 
     if Ds > 2.5*tf or Ds > 19:
-        print(f"Ds = {Ds}mm > 2.5*tf = {2.5*tf}mm X - TurkishSteelStructureCode ")
-        print(f"Ds = {Ds}mm > 19mm X - TurkishSteelStructureCode 12.8.1")
+        print(f"Ds = {Ds}mm > 2.5*tf = {2.5*tf}mm X - TSSDC 12.8.1")
+        print(f"Ds = {Ds}mm > 19mm X - TSSDC 12.8.1")
         return False
     if Hs < 4*Ds:
-        print(f"Hs = {Hs}mm < 4*Ds = {4*Ds}mm X - TurkishSteelStructureCode 12.8.2")
+        print(f"Hs = {Hs}mm < 4*Ds = {4*Ds}mm X - TSSDC 12.8.2")
         return False
     if IsWebAlignmentWelded:
         print("Stud çivisi gövde hizasında bağlandığı için bu kontrollere gerek yoktur.")
         return True
-    print(f"Ds = {Ds}mm ≤ 2.5*tf = {2.5*tf}mm √ - TurkishSteelStructureCode ")
-    print(f"Ds = {Ds}mm ≤ 19mm √ - TurkishSteelStructureCode 12.8.1")
-    print(f"Hs = {Hs}mm ≥ 4*Ds = {4*Ds}mm √ - TurkishSteelStructureCode 12.8.2")
+    print(f"Ds = {Ds}mm ≤ 2.5*tf = {2.5*tf}mm √ - TSSDC 12.8.1")
+    print(f"Ds = {Ds}mm ≤ 19mm √ - TSSDC 12.8.1")
+    print(f"Hs = {Hs}mm ≥ 4*Ds = {4*Ds}mm √ - TSSDC 12.8.2")
     return True
 
 def StudSpaceCheck(Ds : float, s : float, Ycon : float) -> bool:
@@ -70,13 +70,13 @@ def ConcreteCoverAboveTopOfHeadedStudAnchorsChecks(hr : float, t_sac : float, h_
         bool: _description_
     """
     if h_stud-hr-t_sac < 38 or Ycon - h_stud < 13 or Ycon - hr < 50:
-        print(f"h_stud-hr-t_sac = {h_stud-hr-t_sac}mm < 38mm X - TurkishSteelStructureCode 12.4.2.3")
-        print(f"Ycon - h_stud-t_sac = {Ycon - h_stud-t_sac}mm < 13mm X - TurkishSteelStructureCode 12.4.2.3")
-        print(f"Ycon - hr = {Ycon - hr}mm < 50mm X - TurkishSteelStructureCode 12.4.2.3")
+        print(f"h_stud-hr-t_sac = {h_stud-hr-t_sac}mm < 38mm X - TSSDC 12.4.2.3")
+        print(f"Ycon - h_stud-t_sac = {Ycon - h_stud-t_sac}mm < 13mm X - TSSDC 12.4.2.3")
+        print(f"Ycon - hr = {Ycon - hr}mm < 50mm X - TSSDC 12.4.2.3")
         return False
-    print(f"h_stud-hr-t_sac = {h_stud-hr-t_sac}mm ≥ 38mm √ - TurkishSteelStructureCode 12.4.2.3")
-    print(f"Ycon - h_stud-t_sac = {Ycon - h_stud-t_sac}mm ≥ 13mm √ - TurkishSteelStructureCode 12.4.2.3")
-    print(f"Ycon - hr = {Ycon - hr}mm ≥ 50mm √ - TurkishSteelStructureCode 12.4.2.3")
+    print(f"h_stud-hr-t_sac = {h_stud-hr-t_sac}mm ≥ 38mm √ - TSSDC 12.4.2.3")
+    print(f"Ycon - h_stud-t_sac = {Ycon - h_stud-t_sac}mm ≥ 13mm √ - TSSDC 12.4.2.3")
+    print(f"Ycon - hr = {Ycon - hr}mm ≥ 50mm √ - TSSDC 12.4.2.3")
     return True
 
 def MetalDeckCheck(hr : float, wr : float)-> bool:
@@ -90,27 +90,27 @@ def MetalDeckCheck(hr : float, wr : float)-> bool:
         bool: _description_
     """
     if hr > 75 or wr < 50 :
-        print(f"hr = {hr}mm > 75mm X - TurkishSteelStructureCode 12.4.2.3")
-        print(f"wr = {wr}mm < 50mm X - TurkishSteelStructureCode 12.4.2.3")
+        print(f"hr = {hr}mm > 75mm X - TSSDC 12.4.2.3")
+        print(f"wr = {wr}mm < 50mm X - TSSDC 12.4.2.3")
         return False
-    print(f"hr = {hr}mm ≤ 75mm √ - TurkishSteelStructureCode 12.4.2.3")
-    print(f"wr = {wr}mm ≥ 50mm √ - TurkishSteelStructureCode 12.4.2.3")
+    print(f"hr = {hr}mm ≤ 75mm √ - TSSDC 12.4.2.3")
+    print(f"wr = {wr}mm ≥ 50mm √ - TSSDC 12.4.2.3")
     return True
 
 def ConcAvailableStressCheck(f_ck : float) -> bool:
     if 20 <= f_ck and f_ck<70:
-        print(f"20 N/mm^2 ≤ {f_ck} N/mm^2 < 70 N/mm^2 √ - TurkishSteelStructureCode 12.2.3(a)")
+        print(f"20 N/mm^2 ≤ {f_ck} N/mm^2 < 70 N/mm^2 √ - TSSDC 12.2.3(a)")
         return True
     else:
-        print(f"20 ≤ {f_ck} < 70 X - TurkishSteelStructureCode 12.2.3(a)")
+        print(f"20 ≤ {f_ck} < 70 X - TSSDC 12.2.3(a)")
         return False
 
 def SteelAvailableStressCheck(Fy : float) -> bool:
     if Fy <= 460:
-        print(f"{Fy} N/mm^2 ≤ 460 N/mm^2 √ - TurkishSteelStructureCode 12.2.3(c)")
+        print(f"{Fy} N/mm^2 ≤ 460 N/mm^2 √ - TSSDC 12.2.3(c)")
         return True
     else:
-        print(f"Çelik sınıfı yönetmelik şartını sağlamamaktadır => {Fy} > {460} X - TurkishSteelStructureCode 12.2.3(c)")
+        print(f"Çelik sınıfı yönetmelik şartını sağlamamaktadır => {Fy} > {460} X - TSSDC 12.2.3(c)")
         False
 
 def ConcreteYoungModules(fck : float,wc : float = 2320)-> float:
@@ -254,6 +254,9 @@ def Act(Ac : float, n : float)-> float:
     """
     return Ac/n
 
+def Calc_Cf(Vbeam : float, Vcon : float):
+    return min(Vbeam,Vcon)
+
 def Calc_I_tr(Act : float,n : float,b_eff : float, hr : float, tc : float, hb : float,Ab : float, Ibeam : float)-> float:
     """_summary_
 
@@ -296,9 +299,6 @@ def Calc_I_tr(Act : float,n : float,b_eff : float, hr : float, tc : float, hb : 
 
     return Itr
 
-def Calc_Cf(Vbeam : float, Vcon : float):
-    return min(Vbeam,Vcon)
-
 def Calc_I_eff(Ibeam : float, TotalQn : float, Cf : float, Itr : float)-> float:
     ratiocomposite = (TotalQn / Cf)
 
@@ -310,15 +310,182 @@ def Calc_I_eff(Ibeam : float, TotalQn : float, Cf : float, Itr : float)-> float:
 
     return Ieff
 
+def Calc_I_real(I_eff : float)-> float:
+    return I_eff * 0.75
 
-def PTEInWebMn():
-    pass
 
-def PTEInFlangeMn():
-    pass
 
-def PTEInSlabMn():
-    pass
+def Calc_a(Cf : float, fck : float, b_eff : float)-> float:
+    """Beton basınç alanı yüksekliğini hesaplar.
+
+    Args:
+        Cf (float): min(Compression_conc,Tension_steel)
+        fck (float): Beton karakteristik basınç dayanımı
+        b_eff (float): Efektif döşeme genişliği
+
+    Returns:
+        float: Beton basınç alanı yüksekliği
+    """
+    a = round(Cf / (0.85 * fck * b_eff) ,2)
+    print(f"a = {a} mm")
+    return a
+
+def Calc_Y2(Ycon : float, a : float)-> float:
+    """Beton basınç kuvvetinin ağırlık merkezi ile çelik enkesit üst kotu arasındaki mesafeyi hesaplar.
+
+    Args:
+        Ycon (float): Toplam döşeme yüksekliği
+        a (float): Beton basınç alanı yüksekliği
+
+    Returns:
+        float: Y2
+    """
+    Y2 = Ycon - (a/2)
+    print(f"Y2 = {Y2} mm")
+    return Y2
+
+def Calc_Cflange(t_flange:float, b_flange : float, BeamFy:float)-> float:
+    """Çelik kesitin başlığındaki basınç kuvvetini hesaplar.
+
+    Args:
+        t_flange (float): Çelik kesitin başlık kalınlığı
+        b_flange (float): Çelik kesitin başlık genişliği
+        BeamFy (float)  : Çelik kesitin malzeme akma dayanımı
+
+    Returns:
+        float: Çelik kesitin başlığındaki basınç kuvveti
+    """
+    Cflange = round(b_flange * t_flange * BeamFy, 3)
+    # print(f"Cflange = b_flange * t_flange * Fy = {b_flange} * {t_flange} * {BeamFy} = {Cflange} N")
+    return Cflange
+
+def Calc_Y1(T_steel : float, C_conc : float, C_flange, t_flange : float, t_web : float, BeamFy : float)-> float:
+    """Plastik tarafsız eksen(PTE) ile çelik enkesitin üst başlık noktası ile arasındaki uzaklığı hesaplar.
+
+    Args:
+        T_steel (float): Çelik kesitte çekme kuvveti
+        C_conc (float): Betondaki basınç kuvveti
+        C_flange (_type_): Başlıktaki basınç kuvveti
+        t_flange (float): Çelik kesit başlık kalınlığı
+        t_web (float): Çelik kesit gövde kalınlığı
+        BeamFy (float): Çelik kesitin malzeme akma dayanımı
+
+    Returns:
+        float: Y1
+    """
+    Y1 = ((T_steel - C_conc - 2*C_flange) / (2*t_web*BeamFy)) + t_flange
+    # print(f"Y1 = ((T_steel - C_conc - 2*C_flange) / (2*t_web*Fy)) + t_flange = {Y1}mm")
+
+    if Y1 >= t_flange:
+        print(f"Y1 = {Y1} ≥ {t_flange} = t_flange olduğu için PTE çelik kesitin gövdesindedir ve Y1 yeniden hesaplanmalıdır.")
+
+        Y1 = ((T_steel - C_conc - 2*C_flange) / (2*t_web*BeamFy)) + t_flange
+        print(f"Y1 = ((T_steel - C_conc - 2*Cflange) / (2*t_web*Fy)) + t_flange = {Y1}mm")
+    if Y1 < 0 :
+        print(f"Y1={Y1} < 0 ==> Y1 = 0")
+        Y1 = 0
+        
+    return Y1
+
+def Calc_Cweb(Y1 : float, t_flange : float, t_web : float, BeamFy : float)-> float:
+    """Çelik kesitin gövdesindeki basınç kuvvetini hesaplar.
+
+    Args:
+        Y1 (float): Plastik tarafsız eksen(PTE) ile çelik enkesitin üst başlık noktası ile arasındaki uzaklık
+        t_flange (float): Çelik kesit başlık kalınlığı
+        t_web (float): Çelik kesit gövde kalınlığı
+        BeamFy (float): Çelik kesitin malzeme akma dayanımı
+
+    Returns:
+        float: C_web
+    """
+    Cweb    = t_web * BeamFy * (Y1 - t_flange)
+    # print(f"Cweb = t_web * Fy * (Y1 - t_flange) = {Cweb} N")
+    return Cweb
+
+def PTEInWebMn(T_steel : float, C_conc : float, Cflange : float, Cweb: float, Hbeam : float, t_flange:float, Y1 : float, Y2 : float):
+    """PTE çelik kesitin gövdesinde olduğu durumdaki moment dayanımını hesaplar.
+
+    Args:
+        T_steel (float): Çelik kesitte çekme kuvveti
+        C_conc (float): Betondaki basınç kuvveti
+        C_flange (_type_): Çelik kesitin başlığında oluşan basınç kuvveti
+        Cweb (float): Çelik kesitin gövdesinde oluşan basınç kuvveti
+        Hbeam (float): Çelik kesitin yüksekliği
+        t_flange (float): Çelik kesitin başlık kalınlığı
+        Y1 (float): Plastik tarafsız eksen(PTE) ile çelik enkesitin üst başlık noktası ile arasındaki uzaklık
+        Y2 (float): Beton basınç kuvvetinin ağırlık merkezi ile çelik enkesit üst kotu arasındaki mesafe
+    Returns:
+        float: Mn
+    """
+    Mn = round(C_conc*(Y1+Y2) + 2*Cflange*(Y1 - 0.5*t_flange) + 2*Cweb*(0.5*(Y1-t_flange)) + T_steel*(0.5*Hbeam-Y1) ,3)
+    # print(f"Mn_web = (C_conc*(Y1+Y2) + 2*Cflange*(Y1 - 0.5*t_flange) + 2*Cweb*(0.5*(Y1-t_flange)) + T_steel*(0.5*Hbeam-Y1)) = [{round(C_conc*(Y1+Y2),3)} + {round(2*Cflange*(Y1 - 0.5*t_flange),3)} + {round(2*Cweb*(0.5*(Y1-t_flange)),3)} + {round(T_steel*(0.5*Hbeam-Y1),3)}] = {Mn} ")
+    return round(Mn,3)
+
+def PTEInFlangeMn(C_conc : float, Cflange : float, Hbeam : float, BeamAs : float, BeamFy : float, Y1 : float, Y2 : float):
+    """_summary_
+
+    Args:
+        C_conc (float): Betondaki basınç kuvveti
+        Cflange (float): Çelik kesitin başlığında oluşan basınç kuvveti
+        Hbeam (float): Çelik kesitin yüksekliği
+        BeamAs (float): Çelik kesitinin alanı
+        BeamFy (float): Çelik kesitin malzeme akma dayanımı
+        Y1 (float): Plastik tarafsız eksen(PTE) ile çelik enkesitin üst başlık noktası ile arasındaki uzaklık
+        Y2 (float): Beton basınç kuvvetinin ağırlık merkezi ile çelik enkesit üst kotu arasındaki mesafe
+    Returns:
+        float: Mn
+    """
+    Mn = round( ( (C_conc*(Y1+Y2)) + (2*Cflange*Y1/2) + (BeamAs*BeamFy*( (Hbeam/2) - Y1)) ), 3)
+    # print(f"Mn_flange = (C_conc*(Y1+Y2)) + (2*Csflange*Y1/2) + (BeamAs*BeamFy*( (Hbeam/2) - Y1)) = {round(C_conc*(Y1+Y2),2)} +  {round( (2*Cflange*Y1/2),2)} + {round((BeamAs*BeamFy*( (Hbeam/2) - Y1)),2)} = {Mn}")
+    return round(Mn,3)
+
+def PTEInSlabMn(Cf : float, Hbeam : float, hr : float, tc : float, a : float):
+    """_summary_
+
+    Args:
+        Cf (float): min(C_conc,T_steel)
+        Hbeam (float): Çelik kesitin yüksekliği
+        hr (float): Metal sac hadve yüksekliği
+        tc (float): Stud çivisiz beton yüksekliği
+        a (float): Beton basınç alanı yüksekliği
+    Returns:
+        float: Mn
+    """
+    y = round( ( 0.5*Hbeam + hr + tc - 0.5*a), 2)
+    Mn = round(Cf * y,3)
+    # print(f"Mn_slab = Cf * y = {Cf} * {y} = {Mn}")
+    return round(Mn,3)
+
+def CompositeBeamDesignFlexuralCapacity2(C_conc : float, T_steel : float, Mn_web : float, Mn_slab : float, Mn_flange : float, Y1 : float, t_flange: float, fi_b : float = 0.9)-> float:
+    if C_conc < T_steel : 
+        print(f"Kompozit kiriş kısmi etkileşimlidir. Kompozitlik oranı %25'in altına inmemelidir.")
+        if Y1 < t_flange:
+            print("PTE kiriş başlığındadır.")
+            Mn_design = fi_b * Mn_flange
+            print(f"φMn = φ * Mn_slab = {fi_b} * {round(Mn_flange/10**6 ,3)}kNm = {round(Mn_design/10**6 ,3)}kNm")
+            
+        if Y1 >= t_flange:
+            print("PTE kiriş gövdesindedir.")
+            Mn_design = Mn_web * fi_b
+            print(f"φMn = φ * Mn_slab = {fi_b} * {round(Mn_slab/10**6 ,3)}kNm = {round(Mn_design/10**6 ,3)}kNm")
+
+    if C_conc >= T_steel :
+        print(f"Kompozit kiriş tam etkileşimlidir. Plastik tarafsız eksen beton döşemenin içindedir.")
+        Mn_design = fi_b * Mn_slab
+        print(f"φMn = φ * Mn_slab = {fi_b} * {round(Mn_slab/10**6 ,3)}kNm = {round(Mn_design/10**6 ,3)}kNm")
+
+    return Mn_design
+
+def CompositeBeamFlexuralCapacityCheck(M_demand : float, Mn_design : float)-> bool:
+    ratio = round(M_demand/Mn_design ,2)
+    print(f"Talep/Kapasite oranı = {ratio}")
+    if ratio > 1:
+        return False
+    else:
+        return True
+
+
 
 def CompositeBeamDesignFlexuralCapacity(C_conc : float, T_steel : float, Ycon : float,
                                         BeamAs : float, BeamFy : float, Hbeam : float, t_flange : float, b_flange : float,
@@ -341,8 +508,7 @@ def CompositeBeamDesignFlexuralCapacity(C_conc : float, T_steel : float, Ycon : 
             Csflange = BeamFy*b_flange*Y1
             print(f"Csflange = Fy*b_flange*Y1 = {Csflange} N")
             DesignMn = fi_b * ( (C_conc*(Y1+Y2)) + (2*Csflange*Y1/2) + (BeamAs*BeamFy*( (Hbeam/2) - Y1)) )
-            print(f"φMn = φ * ((C_conc*(Y1+Y2)) + (2*Csflange*Y1/2) + (BeamAs*BeamFy*( (Hbeam/2) - Y1))) = {fi_b} * {round(C_conc*(Y1+Y2),2)} +  {round( (2*Csflange*Y1/2),2)} + {round((BeamAs*BeamFy*( (Hbeam/2) - Y1)),2)} = {round(DesignMn,3)}"
-                  )
+            print(f"φMn = φ * ((C_conc*(Y1+Y2)) + (2*Csflange*Y1/2) + (BeamAs*BeamFy*( (Hbeam/2) - Y1))) = {fi_b} * {round(C_conc*(Y1+Y2),2)} +  {round( (2*Csflange*Y1/2),2)} + {round((BeamAs*BeamFy*( (Hbeam/2) - Y1)),2)} = {round(DesignMn,3)}")
         
         if Y1 >= t_flange: # çelik kesitte basınç derinliği başlık kalınlığından büyükse PTE gövdededir ve Y1 gövdedeki basınç ile yeniden hesaplanır.
             print("PTE kiriş gövdesindedir.Çelikteki basınç derinliği(Y1 veya tf') yeniden hesaplanacak...")
@@ -361,6 +527,7 @@ def CompositeBeamDesignFlexuralCapacity(C_conc : float, T_steel : float, Ycon : 
         print(f"φMn = φ * (min(C_conc,T_steel) * ( 0.5*Hbeam + hr + tc - 0.5*a)) \n= {fi_b} * {round(min(C_conc,T_steel),2)} *  {round( ( 0.5*Hbeam + hr + tc - 0.5*a),2)} = {round(DesignMn,3)}")
 
     return round(DesignMn,2)
+
 
 
 def calc_w_cdl(DeadLoad : float, GirdersSpaceLength : float)-> float:
