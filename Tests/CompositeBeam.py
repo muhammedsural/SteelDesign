@@ -530,41 +530,17 @@ def CompositeBeamDesignFlexuralCapacity(C_conc : float, T_steel : float, Ycon : 
 
 
 
-def calc_w_cdl(DeadLoad : float, GirdersSpaceLength : float)-> float:
+def Calc_Load(Load : float, GirdersSpaceLength : float)-> float:
     """Yapım aşamasındaki sabit yük
 
     Args:
-        DeadLoad (float): döşeme artı kiriş ağırlığı
+        Load (float): Yük sınıfı. (döşeme + kiriş ağırlığı =constantdeadload, Kaplama + bölme duvar + mekanik,elektrik vs. yükleri = superdeadload, Hareketli yük = live load) N/mm or kN/m
         GirdersSpaceLength (float): Kiriş aralığı
 
     Returns:
         _type_: _description_
     """
-    return DeadLoad * GirdersSpaceLength
-
-def calc_w_sdl(SuperDeadLoad : float, GirdersSpaceLength : float)-> float:
-    """Kompozitlik sonrası(yapım sonrası) üst üste eklenmiş çizgisel sabit yük(Kaplama + bölme duvar + mekanik,elektrik yükleri) N/mm or kN/m
-
-    Args:
-        SuperDeadLoad (float): üst üste eklenmiş sabit yük(Kaplama + bölme duvar + mekanik,elektrik yükleri) N/mm2 or kN/m2
-        GirdersSpaceLength (float): Kiriş aralığı
-
-    Returns:
-        _type_: _description_
-    """
-    return SuperDeadLoad * GirdersSpaceLength
-
-def calc_w_ll(LiveLoad : float, GirdersSpaceLength : float)-> float:
-    """_summary_
-
-    Args:
-        LiveLoad (float): Hareketli yük
-        GirdersSpaceLength (float): Kiriş aralığı
-
-    Returns:
-        _type_: _description_
-    """
-    return LiveLoad * GirdersSpaceLength
+    return Load * GirdersSpaceLength
 
 def calc_w_tl(w_dl : float, w_ll : float)-> float:
     """Arttırılmış toplam yük
