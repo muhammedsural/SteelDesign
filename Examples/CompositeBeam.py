@@ -108,7 +108,7 @@ class CompositeBeams:
         A_sa        = 3.14 * self.D_stud**2 /4
         Rp          = self.GetRp(Hstud = self.H_stud, hr = self.hr, t_studhead = self.t_studhead, IsPitchParaleltoBeam = self.IsParallel)
         Rg          = self.GetRg(StudsNumberInFlangeWidth=self.Nw, wr = self.wr, hr = self.hr, IsPitchParaleltoBeam = self.IsParallel)
-        Qn          = self.OneStudShearCapacity(Asa=A_sa, fck = self.f_ck, Ec=Ec, Rg=Rg, Rp=Rp, Fu = self.Fu_beam)
+        Qn          = self.OneStudShearCapacity(Asa=A_sa, fck = self.f_ck, Ec=Ec, Rg=Rg, Rp=Rp, Fu = self.Fu_stud)
         # N_stud      = math.ceil((self.CompRatio * Cf) / (Qn)) * self.Nw
         # print(f"%{self.CompRatio*100} kompozitlik oranı için belirlenen stud çivisi sayısı {self.Nw} * {N_stud/self.Nw} = {N_stud}.\n")
         N_stud = self.Calc_StudsNumber(Cf=Cf, CompRatio=self.CompRatio, Qn=Qn, Nw=self.Nw, RibsDistance=self.RibsDistance, L_beam=self.Lbeam, IsParallel=self.IsParallel)
@@ -120,8 +120,8 @@ class CompositeBeams:
         print("Dizayn eğilme kapasitesinin hesaplanması \n")
         a           = self.Calc_a(Cf =Vmin, fck = self.f_ck, b_eff = b_eff)
         Y2          = self.Calc_Y2(Ycon = self.Ycon, a = a)
-        C_flange    = self.Calc_Cflange(t_flange = self.t_flange, b_flange = self.b_flange, BeamFy = self.Fy)
-        Y1          = self.Calc_Y1(T_steel=Cs, C_conc=Vmin, C_flange=C_flange, t_flange = self.t_flange, t_web = self.t_web, BeamFy = self.Fy)
+        Y1          = self.Calc_Y1(T_steel=Cs, C_conc=Vmin, b_flange=self.b_flange, t_flange = self.t_flange, t_web = self.t_web, BeamFy = self.Fy)
+        C_flange    = self.Calc_Cflange(t_flange = self.t_flange, Y1=Y1, b_flange = self.b_flange, BeamFy = self.Fy)
         C_web       = self.Calc_Cweb(Y1=Y1, t_flange = self.t_flange, t_web = self.t_web, BeamFy = self.Fy)
         Mn_web      = self.PTEInWebMn(T_steel=Cs, C_conc=Vmin, Cflange=C_flange, Cweb=C_web, Hbeam = self.Hbeam, t_flange = self.t_flange, Y1=Y1, Y2=Y2)
         Mn_flange   = self.PTEInFlangeMn(C_conc=Vmin, Cflange=C_flange, Hbeam = self.Hbeam, BeamAs = self.Abeam, BeamFy = self.Fy, Y1=Y1, Y2=Y2)
@@ -137,8 +137,6 @@ class CompositeBeams:
         print(f"Mdemand = {M_demand/10**6}kNm\n")
 
         CapacityCheck   = self.CompositeBeamFlexuralCapacityCheck(M_demand=M_demand, Mn_design=Mn_design)
-        if CapacityCheck > 1:
-            print("Kapasite yetersiz!!!")
 
         n = self.RatioYoungModules(Ec=Ec)
         Act = self.ChengedConcToSteelArea(n=n, Ac=Ac)
@@ -163,22 +161,43 @@ class CompositeBeams:
     
     def Calc_StudsNumber(self, Cf : float, CompRatio : float, Qn : float, Nw : float, RibsDistance : float, L_beam : float, IsParallel : bool) -> int:
 
-        N_stud      = math.ceil((CompRatio * Cf) / (Qn)) * Nw
-        print(f"%{CompRatio*100} kompozitlik oranı için belirlenen stud çivisi sayısı {Nw} * {N_stud/Nw} = {N_stud}.\n")
+        N_stud      = math.ceil((CompRatio * Cf) / (Qn))
+        print(f"%{CompRatio*100} kompozitlik oranı için belirlenen stud çivisi sayısı {N_stud}.\n")
 
         if IsParallel != True:
-            n_max = math.floor(L_beam/(RibsDistance*2)) # 2 olukta bir atılması öngörülmüştür.
+            n_max = math.floor(L_beam/(RibsDistance)) # olukta bir atılması öngörülmüştür.maximum atılabilecek stud çivisidir.
+            print(f"Metal sac kiriş eksenine dik yerleştirildiğinden atılabilecek ankraj sayısı oluk sayısı ile sınırlıdır. Her olukta atıldığı kabul edilirse oluk sayısı L_beam / hadve_aralığı = {n_max} olur.")
 
-            if N_stud > n_max and CompRatio == 1:
-                if N_stud > n_max*2 and Nw > 1:
-                    print("Atılabilecek maksimum stud çivisi sayısından fazla stud çivisi gerekmektedir ve tam etkileşimli kesit olduğu için kiriş kesiti arttırılmalıdır.\n")
-                    N_stud = 0.0
-                    return N_stud
-                print("Başlıkta 2 şerli olacak şekilde atama yapın ==> Nw = 2 yapın...\n")
 
+
+            if N_stud > n_max*2 and CompRatio == 1:
+                print(f"Atılabilecek maksimum stud çivisi sayısından fazla stud çivisi gerekmektedir ve tam etkileşimli kesit olduğu için kiriş kesiti arttırılmalıdır. {N_stud} > {2*n_max} X\n")
+                N_stud = 0.0
+                return N_stud
+            
+            if N_stud > n_max:
+                if CompRatio == 1 and Nw < 2:
+                    Nw = 2
+                    print(f"2 adet ankraj yan yana atılması öngörüldü Nw = {Nw}...")
+                    y = N_stud % Nw
+
+                    if y>0:
+                        N_stud = N_stud + 1
+                        print(f"2 adet stud çivisi yan yana olmak üzere {Nw} * {N_stud/Nw} = {N_stud} adet stud çivisi yerleştirilmesi uygundur.")
+                        return N_stud
+                    
+                    if y == 0:
+                        print(f"2 adet stud çivisi yan yana olmak üzere {Nw} * {N_stud/Nw} = {N_stud} adet stud çivisi yerleştirilmesi uygundur.")
+                        return N_stud
+            
+            if N_stud < n_max:
+                N_stud = n_max
+                print("Her olukta kirişin gövde hizasında 1 er adet ankraj yeterlidir.")
+        
         return N_stud
     
     def Calc_Ac(self, b_eff : float, tc : float)-> float:
+        print(f"Ac = {round(b_eff*tc , 2)}mm^2")
         return round(b_eff*tc , 2)
 
     def SectionCheck(self, Hbeam : float, t_web : float, Fy : float)-> bool:
@@ -187,7 +206,7 @@ class CompositeBeams:
         if alfa > trashold:
             print(f"alfa = {alfa} > 3.76*(E/Fy)^0.5 = {trashold} X\n")
             return False
-        print(f"alfa = {alfa} ≤ 3.76*(E/Fy)^0.5 = {trashold} √\n")
+        print(f"h/tw = {alfa} ≤ 3.76*(E/Fy)^0.5 = {trashold} √\n")
         return True
     
     def StudCheck(self,Ds : float, tf : float, Hs : float, IsWebAlignmentWelded : bool = False)-> bool:
@@ -311,7 +330,8 @@ class CompositeBeams:
         Returns:
             float: _description_
         """
-        Ec = 0.043 * wc **1.5 * fck**0.5
+        Ec = 0.043 * wc**1.5 * fck**0.5
+        print(f"Ec = 0.043 * wc **1.5 * fck**0.5 = 0.043 * {wc} **1.5 * {fck}**0.5 = {Ec}")
         return Ec
 
     def RatioYoungModules(self,Ec : float,Es : float = 2*10**5)-> float:
@@ -341,7 +361,7 @@ class CompositeBeams:
         print(f"Qn = 0.5 * Asa * (fck*Ec)**0.5 = {Qn/10**3}kN\n")
         TrashHold = round(Rg*Rp*Asa*Fu ,3)
         if Qn > TrashHold:
-            print(f"Qn = {round(Qn,3)/10**3}kN > Rg*Rp*Asa*Fu = {Rg}*{Rp}*{Asa}*{Fu} = {TrashHold/10**3}kN ==> Qn = {TrashHold/10**3}kN\n")
+            print(f"Qn = {round(Qn,3)/10**3}kN > Rg*Rp*Asa*Fu = {Rg} * {Rp} * {Asa} * {Fu} = {TrashHold/10**3}kN ==> Qn = {TrashHold/10**3}kN\n")
             Qn = TrashHold
         return round(Qn,3)
 
@@ -467,7 +487,7 @@ class CompositeBeams:
         """
 
         Ict = b_eff * tc**3 / (12 * n)
-        # print(f"Ict = {Ict}")
+        print(f"Ict = {Ict}")
 
         y_beam = tc + hr + hb/2
         y_conc = tc / 2
@@ -478,7 +498,7 @@ class CompositeBeams:
         # print(f"TotalAy = {TotalAy}, TotalA = {TotalA}")
 
         Y = TotalAy/TotalA
-        # print(f"Y ={Y}")
+        print(f"Y ={Y}")
 
         d_conc = y_conc - Y
         d_beam = y_beam - Y
@@ -489,18 +509,18 @@ class CompositeBeams:
         # print(f"IAd2_conc = {IAd2_conc}, IAd2_beam = {IAd2_beam}")
 
         Itr = IAd2_beam + IAd2_conc
-
+        print(f"Itr = {Itr/10**4}cm^4")
         return Itr
 
     def Calc_I_eff(self,Ibeam : float, TotalQn : float, Cf : float, Itr : float)-> float:
-        ratioselfosite = (TotalQn / Cf)
+        ratiocomposite = (TotalQn / Cf)
 
-        if ratioselfosite < 0.25:
-            print(f"Kompozitlik oranı 0.25 değerinin altında olamaz stud çivisini arttırın veya daha yüksek dayanımlı bir stud çivisi seçin. {round(ratioselfosite,3)} < 0.25")
+        if ratiocomposite < 0.25:
+            print(f"Kompozitlik oranı 0.25 değerinin altında olamaz stud çivisini arttırın veya daha yüksek dayanımlı bir stud çivisi seçin. {round(ratiocomposite,3)} < 0.25")
             return 0.0
 
-        Ieff = Ibeam + ratioselfosite**0.5 * (Itr - Ibeam)
-
+        Ieff = Ibeam + ratiocomposite**0.5 * (Itr - Ibeam)
+        print(f"Ieff = Ibeam + (TotalQn / Cf)**0.5 * (Itr - Ibeam) = {Ibeam/10**4}cm^4 + {round(ratiocomposite,3)} * {round((Itr - Ibeam)/10**4,4)}cm^4 = {round(Ieff/10**4,4)}cm^4")
         return Ieff
 
     def Calc_I_real(self,I_eff : float)-> float:
@@ -535,22 +555,7 @@ class CompositeBeams:
         print(f"Y2 = {Y2}mm\n")
         return Y2
 
-    def Calc_Cflange(self,t_flange:float, b_flange : float, BeamFy:float)-> float:
-        """Çelik kesitin başlığındaki basınç kuvvetini hesaplar.
-
-        Args:
-            t_flange (float): Çelik kesitin başlık kalınlığı
-            b_flange (float): Çelik kesitin başlık genişliği
-            BeamFy (float)  : Çelik kesitin malzeme akma dayanımı
-
-        Returns:
-            float: Çelik kesitin başlığındaki basınç kuvveti
-        """
-        Cflange = round(b_flange * t_flange * BeamFy, 3)
-        # print(f"Cflange = b_flange * t_flange * Fy = {b_flange} * {t_flange} * {BeamFy} = {Cflange} N")
-        return Cflange
-
-    def Calc_Y1(self,T_steel : float, C_conc : float, C_flange, t_flange : float, t_web : float, BeamFy : float)-> float:
+    def Calc_Y1(self,T_steel : float, C_conc : float, b_flange : float, t_flange : float, t_web : float, BeamFy : float)-> float:
         """Plastik tarafsız eksen(PTE) ile çelik enkesitin üst başlık noktası ile arasındaki uzaklığı hesaplar.
 
         Args:
@@ -564,20 +569,37 @@ class CompositeBeams:
         Returns:
             float: Y1
         """
-        Y1 = ((T_steel - C_conc - 2*C_flange) / (2*t_web*BeamFy)) + t_flange
-        # print(f"Y1 = ((T_steel - C_conc - 2*C_flange) / (2*t_web*Fy)) + t_flange = {Y1}mm")
+        Y1 = round((T_steel - C_conc) / (2*BeamFy*b_flange),2) # PTE başlıkta kabülü
+        print(f"PTE başlıkta kabul edilirse Y1 = (T_steel - C_conc) / (2*BeamFy*b_flange) = {Y1}mm")
 
         if Y1 >= t_flange:
             print(f"Y1 = {Y1} ≥ {t_flange} = t_flange olduğu için PTE çelik kesitin gövdesindedir ve Y1 yeniden hesaplanmalıdır.\n")
-
+            C_flange = round(b_flange * t_flange * BeamFy, 3)
             Y1 = ((T_steel - C_conc - 2*C_flange) / (2*t_web*BeamFy)) + t_flange
             print(f"Y1 = ((T_steel - C_conc - 2*Cflange) / (2*t_web*Fy)) + t_flange = {Y1}mm\n")
+
         if Y1 < 0 :
-            print(f"Y1={Y1} < 0 ==> Y1 = 0\n")
+            print(f"PTE beton döşeme içerisindedir Y1={Y1} < 0 ==> Y1 = 0\n")
             Y1 = 0
             
         return Y1
 
+    def Calc_Cflange(self,t_flange : float, Y1:float, b_flange : float, BeamFy:float)-> float:
+        """Çelik kesitin başlığındaki basınç kuvvetini hesaplar.
+
+        Args:
+            t_flange (float): Çelik kesitin başlık kalınlığı
+            b_flange (float): Çelik kesitin başlık genişliği
+            BeamFy (float)  : Çelik kesitin malzeme akma dayanımı
+
+        Returns:
+            float: Çelik kesitin başlığındaki basınç kuvveti
+        """
+        Cflange = round(b_flange * Y1 * BeamFy, 3)
+        if Y1 > t_flange:
+            Cflange = Cflange * t_flange / Y1
+        return Cflange
+    
     def Calc_Cweb(self,Y1 : float, t_flange : float, t_web : float, BeamFy : float)-> float:
         """Çelik kesitin gövdesindeki basınç kuvvetini hesaplar.
 
@@ -610,7 +632,7 @@ class CompositeBeams:
             float: Mn
         """
         Mn = round(C_conc*(Y1+Y2) + 2*Cflange*(Y1 - 0.5*t_flange) + 2*Cweb*(0.5*(Y1-t_flange)) + T_steel*(0.5*Hbeam-Y1) ,3)
-        # print(f"Mn_web = (C_conc*(Y1+Y2) + 2*Cflange*(Y1 - 0.5*t_flange) + 2*Cweb*(0.5*(Y1-t_flange)) + T_steel*(0.5*Hbeam-Y1)) = [{round(C_conc*(Y1+Y2),3)} + {round(2*Cflange*(Y1 - 0.5*t_flange),3)} + {round(2*Cweb*(0.5*(Y1-t_flange)),3)} + {round(T_steel*(0.5*Hbeam-Y1),3)}] = {Mn} ")
+        print(f"Mn_web = (C_conc*(Y1+Y2) + 2*Cflange*(Y1 - 0.5*t_flange) + 2*Cweb*(0.5*(Y1-t_flange)) + T_steel*(0.5*Hbeam-Y1)) = [{round(C_conc*(Y1+Y2),3)} + {round(2*Cflange*(Y1 - 0.5*t_flange),3)} + {round(2*Cweb*(0.5*(Y1-t_flange)),3)} + {round(T_steel*(0.5*Hbeam-Y1),3)}] = {Mn} ")
         return round(Mn,3)
 
     def PTEInFlangeMn(self,C_conc : float, Cflange : float, Hbeam : float, BeamAs : float, BeamFy : float, Y1 : float, Y2 : float):
@@ -628,7 +650,7 @@ class CompositeBeams:
             float: Mn
         """
         Mn = round( ( (C_conc*(Y1+Y2)) + (2*Cflange*Y1/2) + (BeamAs*BeamFy*( (Hbeam/2) - Y1)) ), 3)
-        # print(f"Mn_flange = (C_conc*(Y1+Y2)) + (2*Csflange*Y1/2) + (BeamAs*BeamFy*( (Hbeam/2) - Y1)) = {round(C_conc*(Y1+Y2),2)} +  {round( (2*Cflange*Y1/2),2)} + {round((BeamAs*BeamFy*( (Hbeam/2) - Y1)),2)} = {Mn}")
+        print(f"Mn_flange = (C_conc*(Y1+Y2)) + (2*Csflange*Y1/2) + (BeamAs*BeamFy*( (Hbeam/2) - Y1)) = {round(C_conc*(Y1+Y2),2)} +  {round( (2*Cflange*Y1/2),2)} + {round((BeamAs*BeamFy*( (Hbeam/2) - Y1)),2)} = {Mn}")
         return round(Mn,3)
 
     def PTEInSlabMn(self,Cf : float, Hbeam : float, hr : float, tc : float, a : float):
@@ -645,14 +667,14 @@ class CompositeBeams:
         """
         y = round( ( 0.5*Hbeam + hr + tc - 0.5*a), 2)
         Mn = round(Cf * y,3)
-        # print(f"Mn_slab = Cf * y = {Cf} * {y} = {Mn}")
+        print(f"Mn_slab = Cf * y = {Cf} * {y} = {Mn}")
         return round(Mn,3)
 
     def CompositeBeamDesignFlexuralCapacity2(self,C_conc : float, T_steel : float, Mn_web : float, Mn_slab : float, Mn_flange : float, Y1 : float, t_flange: float, fi_b : float = 0.9)-> float:
         if C_conc < T_steel : 
             print(f"Kompozit kiriş kısmi etkileşimlidir. Kompozitlik oranı %25'in altına inmemelidir.\n")
             if Y1 < t_flange:
-                print("PTE kiriş başlığındadır.\n")
+                print(f"Y1 = {Y1} < {t_flange} = t_flange PTE kiriş başlığındadır.\n")
                 Mn_design = fi_b * Mn_flange
                 print(f"φMn = φ * Mn_flange = {fi_b} * {round(Mn_flange/10**6 ,3)}kNm = {round(Mn_design/10**6 ,3)}kNm\n")
                 
@@ -670,10 +692,11 @@ class CompositeBeams:
 
     def CompositeBeamFlexuralCapacityCheck(self,M_demand : float, Mn_design : float)-> bool:
         ratio = round(M_demand/Mn_design ,2)
-        print(f"Talep/Kapasite oranı = {ratio}\n")
         if ratio > 1:
+            print(f"Talep/Kapasite oranı = {ratio} > 1 X Kapasite yetersiz!!!\n")
             return False
         else:
+            print(f"Talep/Kapasite oranı = {ratio} ≤ 1 √\n")
             return True
 
     def CompositeBeamDesignFlexuralCapacity(self,C_conc : float, T_steel : float, Ycon : float,
@@ -682,9 +705,9 @@ class CompositeBeams:
 
         C = min(C_conc,T_steel)
         a = C / (0.85 * fck * beff)
-        print(f"a = {a} mm")
+        print(f"a = {a} mm\n")
         Y2 = Ycon - (a/2)
-        print(f"Y2 = {Y2} mm")
+        print(f"Y2 = {Y2} mm\n")
 
         if C_conc < T_steel : 
             print(f"Kompozit kiriş kısmi etkileşimlidir. Kompozitlik oranı %25'in altına inmemelidir.\n")
@@ -786,9 +809,11 @@ class CompositeBeams:
             _type_: _description_
         """
         delta_c = 0.75 * delta_cdl
-        if delta_cdl < Limit or Lbeam < 7600:
-            print(f"delta_cdl = {delta_cdl}mm < {Limit}mm or Lbeam = {Lbeam} < 7600mm olduğu için ters sehime gerek yoktur.\n")
+        if delta_cdl < Limit and Lbeam < 7600:
+            print(f"delta_cdl = {delta_cdl}mm < {Limit}mm and Lbeam = {Lbeam} < 7600mm olduğu için ters sehime gerek yoktur.\n")
             delte_c = 0.0
+            return delta_c
+        print(f"delta_cdl = {delta_cdl}mm > {Limit}mm and Lbeam = {Lbeam} > 7600mm olduğu için {delta_c}mm kadar ters sehime ihtiyaç vardır.\n")
         return delta_c
 
     def calc_Delta_TL(self,delta_cdl : float, delta_sdl : float, delta_ll : float, delta_c : float)-> float:
