@@ -218,7 +218,7 @@ class ISectionPropManager:
     Cw      : float = Field(init=False)
     H       : float = Field(init=False)
 
-    def __post_init__(self) -> None:
+    def SetVariables(self) -> None:
         self.Iz  = self.Get_Iz()
         self.Iy  = self.Get_Iy()
         self.Ip  = self.Get_Ip()
