@@ -46,8 +46,8 @@ def EgilmeKesitKontrolü(TopFlangewidth : float,
                                        Fy: float, 
                                        SectionType : int = 0,
                                        E : float = 2*10**5) -> bool:
-    lamda_Topflange = TopFlangewidth/TopFlangethick
-    lamda_Botflange = BotFlangewidth/BotFlangethick
+    lamda_Topflange = TopFlangewidth/2*TopFlangethick
+    lamda_Botflange = BotFlangewidth/2*BotFlangethick
     lamda_Web = Webheight/Webthick
     
     lamda_p_flange = 0.38 * sqrt(E/Fy)
