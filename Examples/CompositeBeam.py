@@ -60,6 +60,11 @@ class CompositeBeams:
     IsParallel  : bool      = False
 
     def Designer(self)->None:
+        """Verilmiş bilgilere göre basit mesnetli kompozit kirişin tasarım limit durumlarını kontrol eder henüz hazır değil.
+
+        Returns:
+            None
+        """
         print("=="*50)
         print("Design Code Requirements\n")
         GeomCheck = self.ConcAvailableStressCheck(f_ck = self.f_ck)
@@ -162,6 +167,20 @@ class CompositeBeams:
         pass
     
     def Calc_StudsNumber(self, Cf : float, CompRatio : float, Qn : float, Nw : float, RibsDistance : float, L_beam : float, IsParallel : bool) -> int:
+        """Kompozit kirişte belli sınır durumlara göre atılması gereken veya atılabilecek stud çivi sayısını hesaplar
+
+        Args:
+            Cf (float): Cconc ve Tsteel kuvvetlerinden minimum olanı
+            CompRatio (float): Kompozitlik oranı (ToplamQn / Cf)
+            Qn (float): Tek bir stud çivisi kayma dayanımı
+            Nw (float): Başlıkta yan yana atılan çivi sayısı
+            RibsDistance (float): Hadve aralığı
+            L_beam (float): Kiriş uzunluğu
+            IsParallel (bool): Hadvelerin kirişe paralellik durumu paralelse True değilse False
+
+        Returns:
+            int: Stud çivi sayısı
+        """
 
         N_stud      = math.ceil((CompRatio * Cf) / (Qn)) * Nw
         print(f"%{CompRatio*100} kompozitlik oranı için belirlenen stud çivisi sayısı {Nw} * {N_stud/Nw} = {N_stud}.\n")
@@ -179,9 +198,28 @@ class CompositeBeams:
         return N_stud
     
     def Calc_Ac(self, b_eff : float, tc : float)-> float:
+        """Net beton örtüsü
+
+        Args:
+            b_eff (float): Efektif döşeme genişliği
+            tc (float): Beton örtüsü kalınlığı
+
+        Returns:
+            float: Beton örtüsü alanı
+        """
         return round(b_eff*tc , 2)
 
     def SectionCheck(self, Hbeam : float, t_web : float, Fy : float)-> bool:
+        """Kesitin süneklilik kontrolü
+
+        Args:
+            Hbeam (float): Kesit yüksekliği
+            t_web (float): Kesit gövde kalınlığı
+            Fy (float): Kesit malzemesinin akma gerilmesi
+
+        Returns:
+            bool: Kontrolden geçtiyse True geçemediyse False
+        """
         alfa = round(Hbeam /t_web ,2)
         trashold = round(3.76*(2*10**5 / Fy)**0.5 ,2)
         if alfa > trashold:
@@ -191,16 +229,16 @@ class CompositeBeams:
         return True
     
     def StudCheck(self,Ds : float, tf : float, Hs : float, IsWebAlignmentWelded : bool = False)-> bool:
-        """_summary_
+        """Stud çivisi ile ilgili geometrik kontrolleri yapar.
 
         Args:
-            Ds (float): _description_
-            tf (float): _description_
+            Ds (float): Stud çivisinin çapı
+            tf (float): Kirişin başlık kalınlığı
             Hs (float): Stud çivisi yüksekliği
-            IsWebAlignmentWelded (bool, optional): _description_. Defaults to False.
+            IsWebAlignmentWelded (bool, optional): Stud çivisi başlık hizasında kaynaklı ise True değilse False. Defaults to False.
 
         Returns:
-            bool: _description_
+            bool: Geometrik kontrollerden geçtiyse True geçemediyse False
         """
 
         if Ds > 2.5*tf or Ds > 19:
@@ -219,12 +257,12 @@ class CompositeBeams:
         return True
 
     def StudSpaceCheck(self,Ds : float, s : float, Ycon : float) -> bool:
-        """_summary_
+        """Stud çivisi aralık kontrolü
 
         Args:
-            Ds (float): _description_
-            s (float): _description_
-            Ycon (float): _description_
+            Ds (float): Stud çivisinin çapı
+            s (float): Stud çivilerinin kaynaklanma aralığı
+            Ycon (float): Toplam döşeme yüksekliği
 
         Returns:
             bool: _description_
@@ -241,13 +279,21 @@ class CompositeBeams:
         return True
 
     def DistanceBetweenTwoStudsCheck(self,x : float, Ds : float)-> bool:
+        """Yan yana atılan stud çivileri aralık kontolü
 
+        Args:
+            x (float): Stud çivileri arasındaki mesafe
+            Ds (float): Stud çivisi çapı
+
+        Returns:
+            bool: Kontrolden geçtiyse True geçemediyse False.
+        """
         if x < 4*Ds:
             return False
         return True
 
     def ConcreteCoverAboveTopOfHeadedStudAnchorsChecks(self,hr : float, t_sac : float, h_stud: float, Ycon : float) -> bool:
-        """_summary_
+        """Stud çivisi üzerinde kalan beton ile ilgili geometrik kontrolleri yapar.
 
         Args:
             hr (float): Hadve yüksekliği
@@ -255,7 +301,7 @@ class CompositeBeams:
             Ycon (float): Çelik kesit üst başlığından en üst beton lifine olan mesafe
 
         Returns:
-            bool: _description_
+            bool: Kontrolden geçtiyse True geçemediyse False.
         """
         if h_stud-hr-t_sac < 38 or Ycon - h_stud < 13 or Ycon - hr < 50:
             print(f"h_stud-hr-t_sac = {h_stud-hr-t_sac}mm < 38mm X - TSSDC 12.4.2.3\n")
@@ -268,14 +314,14 @@ class CompositeBeams:
         return True
 
     def MetalDeckCheck(self,hr : float, wr : float)-> bool:
-        """_summary_
+        """Metal sacın geometrik kontrollerini yapar
 
         Args:
             hr (float): Hadve yüksekliği
             wr (float): Hadve genişliği
 
         Returns:
-            bool: _description_
+            bool: Kontrolden geçtiyse True geçemediyse False.
         """
         if hr > 75 or wr < 50 :
             print(f"hr = {hr}mm > 75mm X - TSSDC 12.4.2.3\n")
@@ -286,6 +332,14 @@ class CompositeBeams:
         return True
 
     def ConcAvailableStressCheck(self,f_ck : float) -> bool:
+        """Beton karakteristik basınç dayanımının min ve max aralığına göre kontrol eder.
+
+        Args:
+            f_ck (float): 28 günlük beton numunesinin karakteristik basınç dayanımı MPa(N/mm^2)
+
+        Returns:
+            bool: Kontrolden geçtiyse True geçemediyse False.
+        """
         if 20 <= f_ck and f_ck<70:
             print(f"20 N/mm^2 ≤ {f_ck} N/mm^2 < 70 N/mm^2 √ - TSSDC 12.2.3(a)\n")
             return True
@@ -294,6 +348,14 @@ class CompositeBeams:
             return False
 
     def SteelAvailableStressCheck(self,Fy : float) -> bool:
+        """Çelik akma dayanımının min ve max aralığına göre kontrol eder.
+
+        Args:
+            Fy (float): Çelik malzemesinin minimum akma gerilmesi dayanımı MPa(N/mm^2)
+
+        Returns:
+            bool: Kontrolden geçtiyse True geçemediyse False.
+        """
         if Fy <= 460:
             print(f"{Fy} N/mm^2 ≤ 460 N/mm^2 √ - TSSDC 12.2.3(c)\n")
             return True
@@ -302,41 +364,81 @@ class CompositeBeams:
             False
 
     def ConcreteYoungModules(self,fck : float,wc : float = 2320)-> float:
-        """_summary_
+        """Betonun elastisite modülünü hesaplar.
 
         Args:
-            fck (float): MPa
-            wc (float, optional): . Defaults to 2320 kg/m^3.
+            fck (float): 28 günlük beton numunesinin karakteristik basınç dayanımı MPa(N/mm^2)
+            wc (float, optional): Beton birim hacim ağırlığı . Defaults to 2320 kg/m^3.
 
         Returns:
-            float: _description_
+            float: Ec
         """
         Ec = 0.043 * wc **1.5 * fck**0.5
         return Ec
 
     def RatioYoungModules(self,Ec : float,Es : float = 2*10**5)-> float:
-        """_summary_
+        """Çelik ile beton malzemesinin elastisite oranını hesaplar.
 
         Args:
-            Ec (float): MPa
-            Es (float, optional): MPa. Defaults to 2*10**5.
+            Ec (float):Betonun elastisite modülü MPa
+            Es (float, optional): Çeliğin elastisite modülü MPa. Defaults to 2*10**5.
             
 
         Returns:
-            float: _description_
+            float: n
         """
         return round(Es/Ec,3)
 
     def ChengedConcToSteelArea(self,n : float, Ac)-> float:
+        """Dönüştürülmüş beton alanını hesaplar
+
+        Args:
+            n (float): Elastisite oranı çelikle beton malzemesinin
+            Ac (_type_): Beton alanı
+
+        Returns:
+            float: Dönüştürülmüş beton alanı Act
+        """
         return round(Ac/n,3)
 
     def CrushConcCapacity(self,fck : float, Ac : float)-> float:
+        """Beton ezilme dayanımını hesaplar
+
+        Args:
+            fck (float): 28 günlük beton numunesinin karakteristik basınç dayanımı MPa(N/mm^2)
+            Ac (float): Beton alanı
+
+        Returns:
+            float: Beton ezilme dayanımı
+        """
         return round(0.85*fck*Ac,3)
 
     def YieldBeamCapacity(self,fy : float, As : float)-> float:
+        """Çelik kiriş akma dayanımını hesaplar.
+
+        Args:
+            fy (float): Çelik malzemesinin minimum akma dayanımı N/mm^2
+            As (float): Çelik kirişin alanı mm^2
+
+        Returns:
+            float: Çelik kiriş akma dayanımı
+        """
         return round(fy*As,3)
 
     def OneStudShearCapacity(self,Asa : float, fck : float, Ec : float, Rg : float, Rp : float, Fu : float = 448)-> float:
+        """Tek bir stud çivisin kesme dayanımını hesaplar.
+
+        Args:
+            Asa (float): Stud çivisinin alanı
+            fck (float): 28 günlük beton numunesinin karakteristik basınç dayanımı MPa(N/mm^2)
+            Ec (float): Betonun elastisite modülü MPa
+            Rg (float): Çelik sac azaltma katsayısı
+            Rp (float): Çelik sac azaltma katsayısı
+            Fu (float, optional): Stud çivisi malzemesinin kopma gerilmesi dayanımı. Defaults to 448 MPa.
+
+        Returns:
+            float: Tek bir stud çivisin kesme dayanımı Qn
+        """
         Qn = round(0.5 * Asa * (fck*Ec)**0.5,3)
         print(f"Qn = 0.5 * Asa * (fck*Ec)**0.5 = {Qn/10**3}kN\n")
         TrashHold = round(Rg*Rp*Asa*Fu ,3)
@@ -346,14 +448,14 @@ class CompositeBeams:
         return round(Qn,3)
 
     def ShearStudCapacity(self,N : int, Qn : float)-> float:
-        """_summary_
+        """Toplam stud çivisin kesme dayanımını hesaplar.
 
         Args:
-            N (int): Total shear stud number
-            Qn (float): One stud shear capacity
+            N (int): Stud çivisi sayısı; Total shear stud number 
+            Qn (float): Bir adet stud çivisi kesme dayanımı; One stud shear capacity N
 
         Returns:
-            float: _description_
+            float: Toplam stud çivisin kesme dayanımı
         """
         return round(N*Qn,3)
 
@@ -361,11 +463,11 @@ class CompositeBeams:
         """Efektif kompozit döşeme genişliği hesabı
 
         Args:
-            L (float): Kiriş uzunluğu birim : m
-            Lu (float): Kiriş aralığı birim : m
+            L (float): Kiriş uzunluğu birim : mm
+            Lu (float): Kiriş aralığı birim : mm
 
         Returns:
-            b_eff float: efektif döşeme genişliği birim : m
+            b_eff float: efektif döşeme genişliği birim : mm
         """
         b1 = L/8
         b2 = Lu/2
@@ -375,6 +477,16 @@ class CompositeBeams:
         return b
 
     def Calc_tc(self,hr : float, Ycon : float,IsParallel : bool)-> float:
+        """Net beton örtüsü kalınlığını hesaplar
+
+        Args:
+            hr (float): Metal sac hadve yüksekliği. mm
+            Ycon (float): Toplam döşeme yüksekliği. mm
+            IsParallel (bool): Metal sacın kirişlerin boyuna eksen doğrultusuna paralel atılıp atılmama durumu. Paralelse True değilse False
+
+        Returns:
+            float: Net beton örtüsü kalınlığı
+        """
         if IsParallel:
             tc = Ycon - (hr/2)
         else:
@@ -386,9 +498,9 @@ class CompositeBeams:
         """Şekil verilmiş döşeme sacı için azaltma katsayısı
 
         Args:
-            Hstud (float)       : Stud çivisi yüksekliği
-            hr (float)          : Metal sacın hadve yüksekliği
-            t_studhead (float)  : Stud çivisi başlık kalınlığı.
+            Hstud (float)       : Stud çivisi yüksekliği. mm
+            hr (float)          : Metal sacın hadve yüksekliği. mm
+            t_studhead (float)  : Stud çivisi başlık kalınlığı. mm
             IsPitchParaleltoBeam (bool, optional): Döşeme sacı hadveleri kirişlere paralel ise True değilse False. Defaults to False.
 
         Returns:
@@ -411,8 +523,8 @@ class CompositeBeams:
 
         Args:
             StudsNumberInFlangeWidth (int): Kiriş başlık genişliğinde kaynaklanacak kayma çivisi adeti
-            wr (float): Metal sacın hadve genişliği
-            hr (float): Metal sacın hadve yüksekliği
+            wr (float): Metal sacın hadve genişliği mm
+            hr (float): Metal sacın hadve yüksekliği mm
             IsPitchParaleltoBeam (bool, optional): Döşeme sacı hadveleri kirişlere paralel ise True değilse False. Defaults to False.
 
         Returns:
@@ -435,32 +547,29 @@ class CompositeBeams:
         print(f"Rg = {Rg}\n")
         return Rg
 
-    def Act(self,Ac : float, n : float)-> float:
-        """_summary_
+    def Calc_Cf(self,Vbeam : float, Vcon : float):
+        """ Vconc ve Vbeam kuvvetlerinden minimum olanı
 
         Args:
-            Ac (float): _description_
-            n (float): Çelik elastisite modülünün beton elastisite modülüne oranı
+            Vbeam (float): Çelik kiriş akma dayanımı N
+            Vcon (float): Beton ezilme dayanımı N
 
         Returns:
-            float: _description_
+            _type_:  Cconc ve Tsteel kuvvetlerinden minimum olanı
         """
-        return Ac/n
-
-    def Calc_Cf(self,Vbeam : float, Vcon : float):
         return min(Vbeam,Vcon)
 
     def Calc_I_tr(self,Act : float,n : float,b_eff : float, hr : float, tc : float, hb : float,Ab : float, Ibeam : float)-> float:
-        """_summary_
+        """Dönüştürülmüş kompozir kesitin atalet momentini hesaplar.
 
         Args:
             n (float): Çelik elastisite modülünün beton elastisite modülüne oranı
-            b_eff (float): Efektif döşeme genişliği
-            hr (float): Hadve yüksekliği
-            tc (float): Beton döşeme yüksekliği
-            hb (float): Kiriş yüksekliği
-            Ab (float): Kiriş alanı
-            Ibeam (float): Kiriş atalet momenti
+            b_eff (float): Efektif döşeme genişliği mm
+            hr (float): Hadve yüksekliği mm
+            tc (float): Beton döşeme yüksekliği mm
+            hb (float): Kiriş yüksekliği mm
+            Ab (float): Kiriş alanı mm^2
+            Ibeam (float): Kiriş atalet momenti mm^4
 
         Returns:
             float: Dönüştürülmüş kesitin atalet momenti
@@ -493,6 +602,17 @@ class CompositeBeams:
         return Itr
 
     def Calc_I_eff(self,Ibeam : float, TotalQn : float, Cf : float, Itr : float)-> float:
+        """Dönüştürülmüş kesitin efektif atalet momentini hesaplar.
+
+        Args:
+            Ibeam (float): Kirişin atalet momenti
+            TotalQn (float): Toplam stud çivileri kesme dayanımı
+            Cf (float): Vconc ve Vbeam kuvvetlerinden minimum olanı
+            Itr (float): Dönüştürülmüş kesit atalet momenti
+
+        Returns:
+            float: Dönüştürülmüş kesitin efektif atalet momenti
+        """
         ratioselfosite = (TotalQn / Cf)
 
         if ratioselfosite < 0.25:
@@ -504,6 +624,14 @@ class CompositeBeams:
         return Ieff
 
     def Calc_I_real(self,I_eff : float)-> float:
+        """Dönüştürülmüş kesitin efektif atalet momentinin gerçek olarak kullanılması önerilen atalet momenti. Sehim hesaplarında kullanılabilir.
+
+        Args:
+            I_eff (float): Dönüştürülmüş kesitin efektif atalet momenti
+
+        Returns:
+            float: Gerçek atalet momenti
+        """
         return I_eff * 0.75
 
     def Calc_a(self,Cf : float, fck : float, b_eff : float)-> float:
@@ -594,7 +722,7 @@ class CompositeBeams:
         # print(f"Cweb = t_web * Fy * (Y1 - t_flange) = {Cweb} N")
         return Cweb
 
-    def PTEInWebMn(self,T_steel : float, C_conc : float, Cflange : float, Cweb: float, Hbeam : float, t_flange:float, Y1 : float, Y2 : float):
+    def PTEInWebMn(self,T_steel : float, C_conc : float, Cflange : float, Cweb: float, Hbeam : float, t_flange:float, Y1 : float, Y2 : float) -> float:
         """PTE çelik kesitin gövdesinde olduğu durumdaki moment dayanımını hesaplar.
 
         Args:
@@ -613,8 +741,8 @@ class CompositeBeams:
         # print(f"Mn_web = (C_conc*(Y1+Y2) + 2*Cflange*(Y1 - 0.5*t_flange) + 2*Cweb*(0.5*(Y1-t_flange)) + T_steel*(0.5*Hbeam-Y1)) = [{round(C_conc*(Y1+Y2),3)} + {round(2*Cflange*(Y1 - 0.5*t_flange),3)} + {round(2*Cweb*(0.5*(Y1-t_flange)),3)} + {round(T_steel*(0.5*Hbeam-Y1),3)}] = {Mn} ")
         return round(Mn,3)
 
-    def PTEInFlangeMn(self,C_conc : float, Cflange : float, Hbeam : float, BeamAs : float, BeamFy : float, Y1 : float, Y2 : float):
-        """_summary_
+    def PTEInFlangeMn(self,C_conc : float, Cflange : float, Hbeam : float, BeamAs : float, BeamFy : float, Y1 : float, Y2 : float) -> float:
+        """PTE çelik kesitin başlığında olduğu durumdaki moment dayanımını hesaplar.
 
         Args:
             C_conc (float): Betondaki basınç kuvveti
@@ -631,8 +759,8 @@ class CompositeBeams:
         # print(f"Mn_flange = (C_conc*(Y1+Y2)) + (2*Csflange*Y1/2) + (BeamAs*BeamFy*( (Hbeam/2) - Y1)) = {round(C_conc*(Y1+Y2),2)} +  {round( (2*Cflange*Y1/2),2)} + {round((BeamAs*BeamFy*( (Hbeam/2) - Y1)),2)} = {Mn}")
         return round(Mn,3)
 
-    def PTEInSlabMn(self,Cf : float, Hbeam : float, hr : float, tc : float, a : float):
-        """_summary_
+    def PTEInSlabMn(self,Cf : float, Hbeam : float, hr : float, tc : float, a : float) -> float:
+        """PTE beton döşeme içerisinde olduğu durumdaki moment dayanımını hesaplar.
 
         Args:
             Cf (float): min(C_conc,T_steel)
@@ -649,6 +777,21 @@ class CompositeBeams:
         return round(Mn,3)
 
     def CompositeBeamDesignFlexuralCapacity2(self,C_conc : float, T_steel : float, Mn_web : float, Mn_slab : float, Mn_flange : float, Y1 : float, t_flange: float, fi_b : float = 0.9)-> float:
+        """Kompozit kirişin dizayn eğilme dayanımını hesaplar.
+
+        Args:
+            C_conc (float): Beton basınç kuvveti
+            T_steel (float): Çelik akma kuvveti
+            Mn_web (float): PTE kiriş gövdesinde durumu için eğilme dayanımı
+            Mn_slab (float): PTE beton döşemede durumu için eğilme dayanımı
+            Mn_flange (float): PTE kiriş başlığında durumu için eğilme dayanımı
+            Y1 (float): Plastik tarafsız eksen(PTE) ile çelik enkesitin üst başlık noktası ile arasındaki uzaklık
+            t_flange (float): Kiriş başlık kalınlığı
+            fi_b (float, optional): Limit durum dizayn azaltma katsayısı. Defaults to 0.9.
+
+        Returns:
+            float: Kompozit kirişin dizayn eğilme dayanımı
+        """
         if C_conc < T_steel : 
             print(f"Kompozit kiriş kısmi etkileşimlidir. Kompozitlik oranı %25'in altına inmemelidir.\n")
             if Y1 < t_flange:
@@ -669,6 +812,15 @@ class CompositeBeams:
         return Mn_design
 
     def CompositeBeamFlexuralCapacityCheck(self,M_demand : float, Mn_design : float)-> bool:
+        """Eğilme kapasitesi kontrolü
+
+        Args:
+            M_demand (float): Talep eğilme dayanımı
+            Mn_design (float): Kesitin eğilme dayanımı kapasitesi
+
+        Returns:
+            bool: Kontrolü geçtiyse yeterli değilse yetersiz
+        """
         ratio = round(M_demand/Mn_design ,2)
         print(f"Talep/Kapasite oranı = {ratio}\n")
         if ratio > 1:
@@ -679,6 +831,28 @@ class CompositeBeams:
     def CompositeBeamDesignFlexuralCapacity(self,C_conc : float, T_steel : float, Ycon : float,
                                             BeamAs : float, BeamFy : float, Hbeam : float, t_flange : float, b_flange : float,
                                             Ac : float,hr : float,fck : float, beff : float, tc : float, t_web : float, fi_b : float = 0.9) -> float:
+        """_summary_
+
+        Args:
+            C_conc (float): Beton basınç kuvveti
+            T_steel (float): Çelik akma kuvveti
+            Ycon (float): Toplam döşeme yüksekliği
+            BeamAs (float): Kiriş alanı
+            BeamFy (float): Kiriş akma gerilmesi dayanımı
+            Hbeam (float): Kiriş yüksekliği
+            t_flange (float): Kiriş başlık kalınlığı
+            b_flange (float): Kiriş başlık genişliği
+            Ac (float): Net beton örtüsü alanı
+            hr (float): Metal sac hadve yüksekliği
+            fck (float): 28 günlük beton numunesinin karakteristik basınç dayanımı MPa(N/mm^2)
+            beff (float): Efektif döşeme genişliği
+            tc (float): Net beton örtüsü kalınlığı
+            t_web (float): Kiriş gövdesinin kalınlığı
+            fi_b (float, optional): Limit durum dizayn azaltma katsayısı. Defaults to 0.9.
+
+        Returns:
+            float: Kompozit kiriş tasarım eğilme dayanımı.
+        """
 
         C = min(C_conc,T_steel)
         a = C / (0.85 * fck * beff)
@@ -774,16 +948,16 @@ class CompositeBeams:
         delta = (1/28) * (P * Lbeam**3) / (Ebeam * I)
         return delta
 
-    def Camber(self,delta_cdl : float, Lbeam : float, Limit : int = 19)-> float:
-        """Ters sehim hesabı, 19mm altı ani sehim veya 7.6m uzunluğundan az kiriş uzunluğu için yapma
+    def Camber(self,delta_cdl : float, Lbeam : float, Limit : int = 19) -> float:
+        """Ters sehim hesabı, 19mm altı ani sehim veya 7.6m uzunluğundan az kiriş uzunluğu için ters sehim yapmaz
 
         Args:
-            delta_cdl (float): _description_
-            Lbeam (float): _description_
-            Limit (float): _description_
+            delta_cdl (float): Yapım öncesi sabit yükler altında sehim miktarı
+            Lbeam (float): Kiriş uzunluğu
+            Limit (float): Ters sehim için minimum deplasman sınırı.
 
         Returns:
-            _type_: _description_
+            float: Ters sehim miktarı
         """
         delta_c = 0.75 * delta_cdl
         if delta_cdl < Limit or Lbeam < 7600:
@@ -792,7 +966,7 @@ class CompositeBeams:
         return delta_c
 
     def calc_Delta_TL(self,delta_cdl : float, delta_sdl : float, delta_ll : float, delta_c : float)-> float:
-        """_summary_
+        """Kesitteki toplam yüklerden oluşan sehimi hesaplar.
 
         Args:
             delta_cdl (float): Yapım aşaması sabit yük nedeniyle düşey yerdeğiştirme
@@ -801,23 +975,28 @@ class CompositeBeams:
             delta_c (_type_): Ters sehim miktarı
 
         Returns:
-            _type_: _description_
+            float: Toplam deplasman
         """
         delta_cdl_net = delta_cdl - delta_c
         return round(delta_cdl_net + delta_ll + delta_sdl,2)
 
-    def DeflectionChecks2(self, delta : float, L : float, Ratio : int = 360):
+    def DeflectionChecks(self, delta : float, L : float, Ratio : int = 360) -> bool:
+        """Kesitin sehim kontrolünü yapar
+
+        Args:
+            delta (float): Sehim miktarı
+            L (float): Kirişin boyu
+            Ratio (int, optional): Sehim kontrol oranı. L/ratio, Defaults to 360.
+
+        Returns:
+            bool: Kontrolü geçtiyse yeterli değilse yetersiz
+        """
         if delta > L/Ratio:
             print(f"{delta} > L/{Ratio} = {round(L/Ratio,2)} X\n")
             return False
         print(f"{delta} ≤ L/{Ratio} = {round(L/Ratio,2)}  √\n")
         return True
     
-    def DeflectionChecks(self,delta_tl : float, delta_ll : float, Lbeam : float)-> bool:
-
-        if delta_tl > Lbeam/360 or delta_ll > Lbeam/240:
-            return False 
-        return True
 
     
 # if __name__ == "__main__":
