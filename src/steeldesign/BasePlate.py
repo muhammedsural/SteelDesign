@@ -2,6 +2,35 @@ from enum import Enum
 from math import sqrt
 from dataclasses import dataclass, field
 
+class AnchorInstalledType(Enum):
+    Cast_in = 1
+    Post_in = 2
+
+class CastInAnchorType(Enum):
+    # ACI318-19 Fig.R2.1
+    HexHeadBoltWithWasher = 1
+    L_bolt = 2
+    J_bolt = 3
+    WeldedHeadedStud = 4
+
+class PostInAnchorType(Enum):
+    # ACI318-19 Fig.R2.1
+    Adhesive = 1
+    Andercut = 2
+    SleeveType = 3 #TorqueControlledExpansion
+    StudType = 4   #TorqueControlledExpansion
+    DisplacementControlledExpansion = 5
+    Screw = 6
+
+@dataclass
+class Anchor:
+    pass
+
+class BasePlate:
+    pass
+
+
+
 @dataclass
 class AnchorConnection:
     """
@@ -82,6 +111,16 @@ class CheckBasePlate:
     def find_BasePlateThickness():
         pass
 
+"""
+Taban plakasının genişlik ve yüksekliğinin aynı olması uygulama, malzeme kesim ve temini açısından büyük avantajdır bu nedenle aynı olduğu kabul edilecek. Rijitleştirme levhaları ilk aşamada hesaplarda göz önüne alınmayacak.
+
+TASARIM ADIMLARI
+ 1- Analiz sonucundan gelen Pu,Mu,Vu değerleri
+ 2- Taban plakası başlangıç boyutlarının tespiti B==N ==> max(bf+100 , d+100)
+ 3- Yük dış merkezliği e=Mu/Pu; f_pmax, q_max ve e_crit bulunması
+ 4-
+"""
+
 
 # Betona ankrajlanmış birleşimlerde limit dayanımlar
 
@@ -95,6 +134,9 @@ h_ef'       : Limiting value of hef where anchors are located less than 1.5hef f
 h_ef_sl     : Effective embedment depth of shear lug
 h_sl        : Embedment depth of shear lug
 h_a         : Thickness of member in which an anchor is located, measured parallel to anchor axis
+da          : outside diameter of anchor or shaft diameter of headed stud, headed bolt, or hooked bolt
+da'         : Value substituted for d_a if an oversized anchor is used,
+
 
 adhesive    : chemical components formulated organic polymers, or a combination of polymers and inorganic materials that cure if blended together.
 anchor      : a steel element either cast into concrete or post-installed into a hardened concrete member and used to transmit applied loads to the concrete.
@@ -103,26 +145,6 @@ anchor, horizontal or upwardly inclined : Anchor installed in a hole drilled hor
 """
 
 # Tension
-class AnchorInstalledType(Enum):
-    Cast_in = 1
-    Post_in = 2
-
-class CastInAnchorType(Enum):
-    # ACI318-19 Fig.R2.1
-    HexHeadBoltWithWasher = 1
-    L_bolt = 2
-    J_bolt = 3
-    WeldedHeadedStud = 4
-
-class PostInAnchorType(Enum):
-    # ACI318-19 Fig.R2.1
-    Adhesive = 1
-    Andercut = 2
-    SleeveType = 3 #TorqueControlledExpansion
-    StudType = 4   #TorqueControlledExpansion
-    SleeveType = 5
-    DisplacementControlledExpansion = 6
-    Screw = 7
 
 class SteelStrengthOfAnchorInTension:
 
@@ -672,6 +694,8 @@ class ConcretePryoutStrengthOfAnchorInShear:
         V_cpg = k_cp * N_cpg
 
         return round(V_cpg,2)
+
+
 # Tension-Shear Interaction
 
 
@@ -681,8 +705,8 @@ def main() -> None:
     # conn = AnchorConnection(d=12.7, bf= 12.2, B= 240, N= 240, tf=10, P_axial=700, M=50, fck= 3)
     # BasePlat = CheckBasePlate(Contn=conn, ReductionFactor=0.65)
     # print(f' A1 ={BasePlat.A1}, N ={BasePlat.N}, ')
-    pt = AnchorInstalledType(1)
-    print(pt.value)
+    pt = CastInAnchorType(1)
+    print(pt.__class__.__name__.split("In")[0])
 
 if __name__ == "__main__":
     main()
