@@ -123,8 +123,21 @@ TASARIM ADIMLARI
  5- Taşıma gücü kontrolü q_max = f_p(max) * B(or N) > q = Pu/Y
  6- Plaka kalınlığının bulunması t
 """
-def ApproximateBasePlateArea(Pu : float, f_c : float, fi : float = 0.65)-> float:
-    A1_req = Pu / (2 * fi * 0.85 * f_c)
+def ApproximateBasePlateArea(P_u : float, f_c : float, Case : int = 3, fi : float = 0.65)-> float:
+    """
+        A1 : Taban plakasi alani
+        A2 : Beton yüzey alani
+
+        Case 1 : A1 = A2
+        Case 2 : A2 >= 4A1
+        Case 3 : A1 < A2 < 4A1
+
+    """
+    if Case == 1:
+        A1 = P_u / (fi * 0.85 * f_c)
+
+    if Case == 2 or Case == 3:
+        A1_req = P_u / (2 * fi * 0.85 * f_c)
     return round(A1_req,0)
 
 def FindPlateDimensions(d : float, b_f : float, A1_req : float)-> int:
@@ -138,6 +151,9 @@ def FindPlateDimensions(d : float, b_f : float, A1_req : float)-> int:
         raise f"A1_req = {A1_req} > {A_baseplate} = A_baseplate"
     else:
         print("Uygulama açısından kare plaka tercih edilmiştir taban plakasının B ve N boyutları eşittir.")
+    
+    while N%5 != 0:
+            N = N+1
     return N
 
 def e_Get(M_u : float, P_u : float)-> float:
@@ -157,8 +173,8 @@ def f_pmax_Get(f_c : float, A1 : float, A2 : float, fi : float = 0.65)-> float:
     return round(f_pmax,2)
 
 # Türkiye çelik yapılar yönetmeliği denk. 13.22-23
-def Get_P_p(f_pmax, A1)-> float:
-    return round(f_pmax * A1,2)
+def Get_P_p(f_pmax : float, A1 : float, f_c : float)-> float:
+    return round(min(f_pmax * A1, 1.7 * f_c * A1),2)
 
 def q_max_Get(f_pmax : float, B : float)-> float:
     q_max = f_pmax * B
@@ -168,20 +184,31 @@ def e_crit_Get(q_max : float, P_u : float, N : float)-> float:
     e_crit = N/2 - (P_u / (2*q_max))
     return round(e_crit,2)
 
-def Get_m_or_n()->int:
-    pass
+def Get_m(N : float, d : float)->int:
+    return round((N-0.95*d)/2,1)
 
-def Get_X()->float:
-    pass
+def Get_n(B : float, b_f : float)->int:
+    return round((B-0.8*b_f)/2,1)
 
-def Get_lambda()->float:
-    pass
+def Get_X(d : float, b_f : float, P_u : float, P_p : float, fi : float = 0.9)->float:
+    X = (4 * d * b_f * P_u) / ((d + b_f)**2 * fi * P_p)
+    return round(X,2)
 
-def Get_l()-> float:
-    pass
+def Get_lambda(X : float)->float:
+    lambda_x = (2*X**5) / (1 + (1-X)**0.5)
+    lamb = min(1.0,lambda_x)
+    return round(lamb,1)
 
-def BasePlateThickness()->int:
-    pass
+def Get_l(d : float, b_f : float, m : float, n : float, lamb : float)-> float:
+    n_lamb = lamb * (d * b_f)**0.5 / 4
+    return max(m,n,n_lamb)
+
+def BasePlateThickness(P_u : float, l : float, B : float, N : float, F_y : float, fi : float = 0.95)->int:
+    t_min = l * ((2 * P_u) / (fi * F_y * B * N))**0.5
+    return math.ceil(t_min)
+
+
+
 
 # Betona ankrajlanmış birleşimlerde limit dayanımlar
 
