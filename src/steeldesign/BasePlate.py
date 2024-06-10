@@ -1,6 +1,7 @@
 from enum import Enum
 from math import sqrt
 from dataclasses import dataclass, field
+import math
 
 class AnchorInstalledType(Enum):
     Cast_in = 1
@@ -118,9 +119,69 @@ TASARIM ADIMLARI
  1- Analiz sonucundan gelen Pu,Mu,Vu değerleri
  2- Taban plakası başlangıç boyutlarının tespiti B==N ==> max(bf+100 , d+100)
  3- Yük dış merkezliği e=Mu/Pu; f_pmax, q_max ve e_crit bulunması
- 4-
+ 4- Basınç alanı uzunluğu Y 
+ 5- Taşıma gücü kontrolü q_max = f_p(max) * B(or N) > q = Pu/Y
+ 6- Plaka kalınlığının bulunması t
 """
+def ApproximateBasePlateArea(Pu : float, f_c : float, fi : float = 0.65)-> float:
+    A1_req = Pu / (2 * fi * 0.85 * f_c)
+    return round(A1_req,0)
 
+def FindPlateDimensions(d : float, b_f : float, A1_req : float)-> int:
+    delta = (0.95 * d - 0.8 * b_f) / 2
+    N = A1_req**0.5 + delta
+    B = A1_req / N
+    N = math.ceil(max(B,N))
+    B = N
+    A_baseplate = B * N
+    if A1_req > A_baseplate:
+        raise f"A1_req = {A1_req} > {A_baseplate} = A_baseplate"
+    else:
+        print("Uygulama açısından kare plaka tercih edilmiştir taban plakasının B ve N boyutları eşittir.")
+    return N
+
+def e_Get(M_u : float, P_u : float)-> float:
+    return round(M_u/P_u)
+
+def f_pmax_Get(f_c : float, A1 : float, A2 : float, fi : float = 0.65)-> float:
+    if A2 < A1:
+        raise ValueError("A2, A1'den küçük olamaz!!!")
+    if A2 == A1 :
+        f_pmax = fi * 0.85 * f_c
+    if A2 > A1:
+        f_pmax = fi * 0.85 * f_c * (A2/A1)**0.5
+
+    if (A2/A1)**0.5 >= 1 and (A2/A1)**0.5 <= 2:
+        print("Beton sargılama katkısı kullanılabilir.")
+
+    return round(f_pmax,2)
+
+# Türkiye çelik yapılar yönetmeliği denk. 13.22-23
+def Get_P_p(f_pmax, A1)-> float:
+    return round(f_pmax * A1,2)
+
+def q_max_Get(f_pmax : float, B : float)-> float:
+    q_max = f_pmax * B
+    return round(q_max,2)
+
+def e_crit_Get(q_max : float, P_u : float, N : float)-> float:
+    e_crit = N/2 - (P_u / (2*q_max))
+    return round(e_crit,2)
+
+def Get_m_or_n()->int:
+    pass
+
+def Get_X()->float:
+    pass
+
+def Get_lambda()->float:
+    pass
+
+def Get_l()-> float:
+    pass
+
+def BasePlateThickness()->int:
+    pass
 
 # Betona ankrajlanmış birleşimlerde limit dayanımlar
 
