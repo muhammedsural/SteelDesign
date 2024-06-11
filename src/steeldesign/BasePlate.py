@@ -55,157 +55,183 @@ class AnchorConnection:
     fck     : float = field(default_factory=float)
 
 @dataclass
-class CheckBasePlate:
-    Contn  : AnchorConnection = field(default_factory=AnchorConnection)
-    ReductionFactor : float = field(default_factory=float)
+class BasePlate:
+    P_u : float
+    M_u : float
+    V_u : float
+    f_c : float
+    d   : float
+    b_f : float
+    f_c : float
+    F_y : float
+    Case: int
 
-    def __post_init__(self) -> None:
-        self.A1 = self.FindRequiredBasePlateAreaForConcentricAxialCompressiveLoad(Case=1)    
-        self.N  = self.FindApproxBasePlateHeight()
+    """
+    Taban plakasının genişlik ve yüksekliğinin aynı olması uygulama, malzeme kesim ve temini açısından büyük avantajdır bu nedenle aynı olduğu kabul edilecek. Rijitleştirme levhaları ilk aşamada hesaplarda göz önüne alınmayacak.
 
-    def FindRequiredBasePlateAreaForConcentricAxialCompressiveLoad(self,Case : int) -> float:
+    TASARIM ADIMLARI
+    1 - Analiz sonucundan LRFD kombinasyonları ile arttırılmış yüklerden gelen Pu,Mu,Vu değerleri
+    2 - Eksenel basınç kuvvetinde minimum gerekli taban plakası alanının bulunması
+    3 - Taban plakası başlangıç boyutlarının tespiti B==N ==> max(bf+80 , d+80)
+    4 - Taban plakası alanı ile minimum gerekli alanın karşılaştırılması.
+    5 - Yük dış merkezliği e=Mu/Pu; f_pmax = fi * 0.85 * f_c * (A2/A1)**0.5, q_max= f_pmax * B ve e_crit= N/2 - (P_u / (2*q_max)) bulunması
+    6 - m=(N-0.95*d)/2, n=(B-0.8*b_f)/2, lamda=(2*X**0.5) / (1 + (1-X)**0.5) ve bunlara bağlı olarak konsol plaka boyu l=max(m,n,lamb*n') değerinin hesaplanması.
+    7 - Çekme için rod gerekiyorsa, ankraj merkezinden plaka orta noktasına olan mesafenin hesabı f,
+    8 - Basınç alanı uzunluğu Y 
+    9 - Taban plakası altında oluşan basınç kuvveti q nun bulunması,
+    11- Taşıma gücü kontrolü q_max = f_p(max) * B(or N) > q = Pu/Y
+    12- Taban plakası altında oluşan basınç gerilmesinin bulunması f_p=P_u/(B*Y),
+    13- Plaka kalınlığının bulunması tp,
+    """
+    import math
+
+    def ApproximateBasePlateArea(P_u : float, f_c : float, Case : int = 3, fi : float = 0.65)-> float:
         """
-        A1 : Taban plakasi alani
-        A2 : Beton yüzey alani
+            A1 : Taban plakasi alani
+            A2 : Beton yüzey alani
 
-        Case 1 : A1 = A2
-        Case 2 : A2 >= 4A1
-        Case 3 : A1 < A2 < 4A1
+            Case 1 : A1 = A2
+            Case 2 : A2 >= 4A1
+            Case 3 : A1 < A2 < 4A1
 
         """
         if Case == 1:
-            A1 = self.Contn.P_axial / (self.ReductionFactor * 0.85 * self.Contn.fck)
-        elif Case == 2:
-            A1 = self.Contn.P_axial / (2*(self.ReductionFactor * 0.85 * self.Contn.fck))
+            A1_req = P_u / (fi * 0.85 * f_c)
 
-        return round(A1,0)
+        if Case == 2 or Case == 3:
+            A1_req = P_u / (2 * fi * 0.85 * f_c)
+        return round(A1_req,0)
 
-    def FindApproxBasePlateHeight(self) -> float:
-        delta = (0.95*self.Contn.d - self.Contn.bf)/2
-        N = round(sqrt(self.A1) + delta,0)
+    def FindPlateDimensions(d : float, b_f : float, A1_req : float)-> int:
+        delta = (0.95 * d - 0.8 * b_f) / 2
+        
+        N_1 = A1_req**0.5 + delta
+        N_2 = d + 2 * 80#inç - 3inç yerine 80mm olmalı
+        N = max(N_1,N_2)
 
-        while N%5 != 0:
-            N = N+1
+        B_1 = A1_req / N
+        B_2 = b_f + 2 * 80#inç - 3inç yerine 80mm olmalı
+        B = max(B_1,B_2)
 
-        return round(N,0)
-    
+        N = math.ceil(max(B,N))
+        B = N
+        A_baseplate = B * N
+        if A1_req > A_baseplate:
+            raise f"A1_req = {A1_req} > {A_baseplate} = A_baseplate"
+        else:
+            print("Uygulama açısından kare plaka tercih edilmiştir taban plakasının B ve N boyutları eşittir.")
+        
+        # while N%5 != 0:
+        #         N = N+1
+        #         B = B + 1
+        return N
 
-    def RequiredBasePlateAreaForAxialLoad(self):
-        #A1 : Taban plakası alanı
-        #A2 : Beton yüzey alanı
+    def e_Get(M_u : float, P_u : float)-> float:
+        return round(M_u/P_u,2)
 
-        pass
+    def f_pmax_Get(f_c : float, A1 : float, A2 : float, fi : float = 0.65)-> float:
+        if A2 < A1:
+            raise ValueError("A2, A1'den küçük olamaz!!!")
+        if A2 >= A1:
+            f_pmax = fi * 0.85 * f_c * (A2/A1)**0.5
 
-    def find_BasePlateDim():
+        if (A2/A1)**0.5 >= 1 and (A2/A1)**0.5 <= 2:
+            print("Beton sargılama katkısı kullanılabilir.")
 
-        pass
+        return round(f_pmax,2)
 
-    def find_criteccantiristy():
-        pass
+    # Türkiye çelik yapılar yönetmeliği denk. 13.22-23
+    def Get_P_p(f_pmax : float, A1 : float, f_c : float)-> float:
+        P_p = f_pmax * A1
+        P_p = min(P_p, 1.7 * f_c * A1)
+        return round(P_p,2)
 
-    def find_eccantiristy():
-        pass
+    def q_max_Get(f_pmax : float, B : float)-> float:
+        q_max = f_pmax * B
+        return round(q_max,2)
 
-    def find_BearingLength():
-        pass
+    def e_crit_Get(q_max : float, P_u : float, N : float)-> float:
+        e_crit = N/2 - (P_u / (2*q_max))
+        return round(e_crit,2)
 
-    def find_BasePlateThickness():
-        pass
+    def Get_m(N : float, d : float)->int:
+        return round((N-0.95*d)/2,2)
 
-"""
-Taban plakasının genişlik ve yüksekliğinin aynı olması uygulama, malzeme kesim ve temini açısından büyük avantajdır bu nedenle aynı olduğu kabul edilecek. Rijitleştirme levhaları ilk aşamada hesaplarda göz önüne alınmayacak.
+    def Get_n(B : float, b_f : float)->int:
+        return round((B-0.8*b_f)/2,2)
 
-TASARIM ADIMLARI
- 1- Analiz sonucundan gelen Pu,Mu,Vu değerleri
- 2- Taban plakası başlangıç boyutlarının tespiti B==N ==> max(bf+100 , d+100)
- 3- Yük dış merkezliği e=Mu/Pu; f_pmax, q_max ve e_crit bulunması
- 4- Basınç alanı uzunluğu Y 
- 5- Taşıma gücü kontrolü q_max = f_p(max) * B(or N) > q = Pu/Y
- 6- Plaka kalınlığının bulunması t
-"""
-def ApproximateBasePlateArea(P_u : float, f_c : float, Case : int = 3, fi : float = 0.65)-> float:
-    """
-        A1 : Taban plakasi alani
-        A2 : Beton yüzey alani
+    def Get_X(d : float, b_f : float, P_u : float, P_p : float, fi : float = 0.9)->float:
+        X = (4 * d * b_f * P_u) / ((d + b_f)**2 *  P_p)
+        return round(X,2)
 
-        Case 1 : A1 = A2
-        Case 2 : A2 >= 4A1
-        Case 3 : A1 < A2 < 4A1
+    def Get_lambda(X : float)->float:
+        lambda_x = 1.0
+        if X <1:
+            lambda_x = (2*X**0.5) / (1 + (1-X)**0.5)
+        lamb_ = min(1.0,lambda_x)
+        return round(lamb_,2)
 
-    """
-    if Case == 1:
-        A1 = P_u / (fi * 0.85 * f_c)
+    def Get_l(d : float, b_f : float, m : float, n : float, lamb : float)-> float:
+        n_lamb = lamb * (d * b_f)**0.5 / 4
+        return max(m,n,n_lamb)
 
-    if Case == 2 or Case == 3:
-        A1_req = P_u / (2 * fi * 0.85 * f_c)
-    return round(A1_req,0)
+    def BasePlateThickness(P_u : float, l : float, B : float, N : float, F_y : float, fi : float = 0.9)->int:
+        t_min = l * ((2 * P_u) / (fi * F_y * B * N))**0.5
+        return round(t_min,2)
 
-def FindPlateDimensions(d : float, b_f : float, A1_req : float)-> int:
-    delta = (0.95 * d - 0.8 * b_f) / 2
-    N = A1_req**0.5 + delta
-    B = A1_req / N
-    N = math.ceil(max(B,N))
-    B = N
-    A_baseplate = B * N
-    if A1_req > A_baseplate:
-        raise f"A1_req = {A1_req} > {A_baseplate} = A_baseplate"
-    else:
-        print("Uygulama açısından kare plaka tercih edilmiştir taban plakasının B ve N boyutları eşittir.")
-    
-    while N%5 != 0:
-            N = N+1
-    return N
+    def Get_Y(e : float, e_crit : float, P_u : float, N : float, f : float, q_max : float) -> float:
+        if e <= e_crit:
+            Y = N - 2*e
+        
+        if e > e_crit:
+            limit = (f + N/2)**2
+            check = (2 * P_u * (e + f)) / q_max
+            if check > limit:
+                print("Denge denklemi çözümsüz plaka büyütülmeli.")
+                return 0.0
+            Y1 = (f + N*0.5)  + ( (f + N * 0.5)**2 - (2*P_u * (e + f))/q_max )**0.5
+            Y2 = (f + N*0.5)  - ( (f + N * 0.5)**2 - (2*P_u * (e + f))/q_max )**0.5
+            Y = min(Y1,Y2)
+        return Y
 
-def e_Get(M_u : float, P_u : float)-> float:
-    return round(M_u/P_u)
+    def Get_f_p(P_u : float, B : float, Y : float) -> float:
+        return round(P_u/(B*Y),2)
 
-def f_pmax_Get(f_c : float, A1 : float, A2 : float, fi : float = 0.65)-> float:
-    if A2 < A1:
-        raise ValueError("A2, A1'den küçük olamaz!!!")
-    if A2 == A1 :
-        f_pmax = fi * 0.85 * f_c
-    if A2 > A1:
-        f_pmax = fi * 0.85 * f_c * (A2/A1)**0.5
+    def ForMomentsBasePlateThickness(m : float, n : float, f_p : float, Y : float, F_y : float)-> int:
+        if Y >= m:
+            t_p_req1 = 1.5 * m * (f_p / F_y)**0.5
+        if Y < m :
+            t_p_req1 = 2.11 * ( (f_p * Y * (m - Y*0.5) ) / F_y)
+        
+        if Y >= n:
+            t_p_req2 = 1.5 * n * (f_p / F_y)**0.5
+        if Y < n :
+            t_p_req2 = 2.11 * ( (f_p * Y * (n - Y*0.5) ) / F_y)
+        
+        t_p_req = max(t_p_req2,t_p_req1)
+        return round(t_p_req,2)
 
-    if (A2/A1)**0.5 >= 1 and (A2/A1)**0.5 <= 2:
-        print("Beton sargılama katkısı kullanılabilir.")
+    def GetBasePlateArea(B : float, N : float) -> float:
+        A1 = B * N
+        return round(A1,2)
 
-    return round(f_pmax,2)
+    def Get_t(N : int, x : float) -> float:
+        """ankraj merkezinden plaka orta noktasına olan mesafeyi hesaplar
 
-# Türkiye çelik yapılar yönetmeliği denk. 13.22-23
-def Get_P_p(f_pmax : float, A1 : float, f_c : float)-> float:
-    return round(min(f_pmax * A1, 1.7 * f_c * A1),2)
+        Args:
+            N (int): İlgili doğrultuda plaka boyutu
+            x (float): Ankraj rodun merkezinin plaka kenarına olan mesafesi
 
-def q_max_Get(f_pmax : float, B : float)-> float:
-    q_max = f_pmax * B
-    return round(q_max,2)
+        Returns:
+            float: t
+        """
+        t = N/2 - x #ankraj merkezinden plaka orta noktasına olan mesafe
+        return round(t,2)
 
-def e_crit_Get(q_max : float, P_u : float, N : float)-> float:
-    e_crit = N/2 - (P_u / (2*q_max))
-    return round(e_crit,2)
+    def Get_q(P_u : float, Y : float) -> float:
+        return round(P_u/Y,2)
 
-def Get_m(N : float, d : float)->int:
-    return round((N-0.95*d)/2,1)
 
-def Get_n(B : float, b_f : float)->int:
-    return round((B-0.8*b_f)/2,1)
-
-def Get_X(d : float, b_f : float, P_u : float, P_p : float, fi : float = 0.9)->float:
-    X = (4 * d * b_f * P_u) / ((d + b_f)**2 * fi * P_p)
-    return round(X,2)
-
-def Get_lambda(X : float)->float:
-    lambda_x = (2*X**5) / (1 + (1-X)**0.5)
-    lamb = min(1.0,lambda_x)
-    return round(lamb,1)
-
-def Get_l(d : float, b_f : float, m : float, n : float, lamb : float)-> float:
-    n_lamb = lamb * (d * b_f)**0.5 / 4
-    return max(m,n,n_lamb)
-
-def BasePlateThickness(P_u : float, l : float, B : float, N : float, F_y : float, fi : float = 0.95)->int:
-    t_min = l * ((2 * P_u) / (fi * F_y * B * N))**0.5
-    return math.ceil(t_min)
 
 
 
@@ -789,12 +815,12 @@ class ConcretePryoutStrengthOfAnchorInShear:
 
 
 
-def main() -> None:
-    # conn = AnchorConnection(d=12.7, bf= 12.2, B= 240, N= 240, tf=10, P_axial=700, M=50, fck= 3)
-    # BasePlat = CheckBasePlate(Contn=conn, ReductionFactor=0.65)
-    # print(f' A1 ={BasePlat.A1}, N ={BasePlat.N}, ')
-    pt = CastInAnchorType(1)
-    print(pt.__class__.__name__.split("In")[0])
+# def main() -> None:
+#     # conn = AnchorConnection(d=12.7, bf= 12.2, B= 240, N= 240, tf=10, P_axial=700, M=50, fck= 3)
+#     # BasePlat = CheckBasePlate(Contn=conn, ReductionFactor=0.65)
+#     # print(f' A1 ={BasePlat.A1}, N ={BasePlat.N}, ')
+#     pt = CastInAnchorType(1)
+#     print(pt.__class__.__name__.split("In")[0])
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
