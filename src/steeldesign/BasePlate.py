@@ -56,15 +56,31 @@ class AnchorConnection:
 
 @dataclass
 class BasePlate:
-    P_u : float
-    M_u : float
-    V_u : float
-    f_c : float
-    d   : float
-    b_f : float
-    f_c : float
-    F_y : float
-    Case: int
+    P_u     : float
+    M_u     : float
+    V_u     : float
+    f_c     : float
+    d       : float
+    b_f     : float
+    f_c     : float
+    F_y     : float
+    B       : int   
+    N       : int   
+    Case    : int   = field(init=False)
+    A1      : float = field(init=False)
+    A2      : float = field(init=False)
+    e       : float = field(init=False)
+    f_pmax  : float = field(init=False)
+    q_max   : float = field(init=False)
+    e_crit  : float = field(init=False)
+    m       : float = field(init=False)
+    n       : float = field(init=False)
+    lamda   : float = field(init=False)
+    f       : float = field(init=False)
+    Y       : float = field(init=False)
+    q       : float = field(init=False)
+    f_p     : float = field(init=False)
+    t_p     : float = field(init=False)
 
     """
     Taban plakasının genişlik ve yüksekliğinin aynı olması uygulama, malzeme kesim ve temini açısından büyük avantajdır bu nedenle aynı olduğu kabul edilecek. Rijitleştirme levhaları ilk aşamada hesaplarda göz önüne alınmayacak.
@@ -83,17 +99,20 @@ class BasePlate:
     12- Taban plakası altında oluşan basınç gerilmesinin bulunması f_p=P_u/(B*Y),
     13- Plaka kalınlığının bulunması tp,
     """
-    import math
 
     def ApproximateBasePlateArea(P_u : float, f_c : float, Case : int = 3, fi : float = 0.65)-> float:
-        """
-            A1 : Taban plakasi alani
-            A2 : Beton yüzey alani
+        """Eksenel basınç durumunda plakanın üniform gerilme dağılımı oluşturabilmesi için minimum gerekli taban plaka alanını hesaplar.
 
-            Case 1 : A1 = A2
-            Case 2 : A2 >= 4A1
-            Case 3 : A1 < A2 < 4A1
+        Args:
+            P_u (float): LRFD kombinasyonlarından analizle gelen eksenel kuvvet, N
+            f_c (float): Beton basınç dayanımı, N/mm^2 
+            Case (int, optional): 
+                                A1 : Taban plakasi alani; A2 : Beton yüzey alani
+                                Case 1 : A1 = A2; Case 2 : A2 >= 4A1; Case 3 : A1 < A2 < 4A1. Defaults to 3.
+            fi (float, optional): Dayanım azaltma katsayısı. Defaults to 0.65.
 
+        Returns:
+            float: A1_req
         """
         if Case == 1:
             A1_req = P_u / (fi * 0.85 * f_c)
