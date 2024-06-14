@@ -3,6 +3,8 @@ from math import sqrt
 from dataclasses import dataclass, field
 import math
 
+from handcalcs import handcalc
+
 class AnchorInstalledType(Enum):
     Cast_in = 1
     Post_in = 2
@@ -106,7 +108,7 @@ class BasePlate:
     2 - Eksenel basınç kuvvetinde minimum gerekli taban plakası alanının bulunması
     3 - Taban plakası başlangıç boyutlarının tespiti B==N ==> max(bf+80 , d+80)
     4 - Taban plakası alanı ile minimum gerekli alanın karşılaştırılması.
-    5 - Yük dış merkezliği e=Mu/Pu; f_pmax = fi * 0.85 * f_c * (A2/A1)**0.5, q_max= f_pmax * B ve e_crit= N/2 - (P_u / (2*q_max)) bulunması
+    5 - Yük dış merkezliği e=Mu/Pu; f_pmax = phi * 0.85 * f_c * (A2/A1)**0.5, q_max= f_pmax * B ve e_crit= N/2 - (P_u / (2*q_max)) bulunması
     6 - m=(N-0.95*d)/2, n=(B-0.8*b_f)/2, lamda=(2*X**0.5) / (1 + (1-X)**0.5) ve bunlara bağlı olarak konsol plaka boyu l=max(m,n,lamb*n') değerinin hesaplanması.
     7 - Çekme için rod gerekiyorsa, ankraj merkezinden plaka orta noktasına olan mesafenin hesabı f,
     8 - Basınç alanı uzunluğu Y 
@@ -115,12 +117,31 @@ class BasePlate:
     12- Taban plakası altında oluşan basınç gerilmesinin bulunması f_p=P_u/(B*Y),
     13- Plaka kalınlığının bulunması tp,
     """
-    def DesignBasePlate(self)->None:
-        self.e = self.e_Get(self.M_u, self.P_u)
-
+    def __post_init__(self)->None:
+        self.e = self.e_Get(self.M_u,self.P_u)
         self.A1 = self.GetBasePlateArea(self.B,self.N)
-        self.A2 = self.GetBasePlateArea(self.B2,self.N2)
+        self.A2 = self.GetConcArea(self.B2,self.N2)
         self.Case = self.DefineCase(self.A1, self.A2)
+        self.f_pmax = self.f_pmax_Get(self.f_c, self.A1, self.A2)
+        self.P_p = self.Get_P_p(self.f_pmax, self.A1, self.f_c)
+        
+        self.q_max      = self.q_max_Get(self.f_pmax, self.B)
+        self.e_crit     = self.e_crit_Get(self.q_max, self.P_u, self.N)
+        self.f          = self.Get_t(self.N, self.x)
+        self.Y          = self.Get_Y(self.e, self.e_crit, self.P_u, self.N, self.f, self.q_max)
+        self.q          = self.Get_q(self.P_u, self.Y)
+        self.m          = self.Get_m(self.N, self.d)
+        self.n          = self.Get_n(self.B, self.b_f)
+        self.X          = self.Get_X(self.d, self.b_f, self.P_u, self.P_p)
+        self.lamda      = self.Get_lambda(self.X)
+        self.l          = self.Get_l(self.d, self.b_f, self.m, self.n, self.lamda)
+        t_min           = self.BasePlateThickness(self.P_u, self.l, self.B, self.N, self.F_y)
+        self.f_p        = self.Get_f_p(self.P_u, self.B, self.Y)
+        self.t_p        = self.ForMomentsBasePlateThickness(self.m, self.n, self.f_p, self.Y, self.F_y)
+        if self.t_p < t_min:
+            self.t_p = t_min
+        
+    def DesignBasePlate(self)->None:
         A1_req = self.ApproximateBasePlateArea(self.P_u, self.f_c, self.Case)
         if A1_req > self.A1:
             print(f"A1 = {self.A1} < A1_req = {A1_req}")
@@ -164,15 +185,17 @@ class BasePlate:
         if self.t_p < t_min:
             self.t_p = t_min
         
-
+    
     def GetBasePlateArea(self,B : float, N : float) -> float:
         A1 = B * N
         return round(A1,2)
+    
     
     def GetConcArea(self, B2 : float, N2 : float):
         A2 = B2 * N2
         return round(A2,2)
 
+    
     def DefineCase(self, A1: float, A2: float)-> float:
         if A1 == A2:
             Case = 1
@@ -182,7 +205,7 @@ class BasePlate:
             Case = 3
         return Case
 
-    def ApproximateBasePlateArea(self,P_u : float, f_c : float, Case : int = 3, fi : float = 0.65)-> float:
+    def ApproximateBasePlateArea(self,P_u : float, f_c : float, Case : int = 3, phi : float = 0.65)-> float:
         """Eksenel basınç durumunda plakanın üniform gerilme dağılımı oluşturabilmesi için minimum gerekli taban plaka alanını hesaplar.
 
         Args:
@@ -191,16 +214,16 @@ class BasePlate:
             Case (int, optional): 
                                 A1 : Taban plakasi alani; A2 : Beton yüzey alani
                                 Case 1 : A1 = A2; Case 2 : A2 >= 4A1; Case 3 : A1 < A2 < 4A1. Defaults to 3.
-            fi (float, optional): Dayanım azaltma katsayısı. Defaults to 0.65.
+            phi (float, optional): Dayanım azaltma katsayısı. Defaults to 0.65.
 
         Returns:
             float: A1_req
         """
         if Case == 1:
-            A1_req = P_u / (fi * 0.85 * f_c)
+            A1_req = P_u / (phi * 0.85 * f_c)
 
         if Case == 2 or Case == 3:
-            A1_req = P_u / (2 * fi * 0.85 * f_c)
+            A1_req = P_u / (2 * phi * 0.85 * f_c)
         return round(A1_req,0)
 
     def FindPlateDimensions(self,d : float, b_f : float, A1_req : float)-> int:
@@ -227,57 +250,69 @@ class BasePlate:
                 B = B + 1
         return N
 
+    
     def e_Get(self,M_u : float, P_u : float)-> float:
-        return round(M_u/P_u,2)
+        e = round(M_u/P_u,2)
+        return e
 
-    def f_pmax_Get(self,f_c : float, A1 : float, A2 : float, fi : float = 0.65)-> float:
+    def f_pmax_Get(self,f_c : float, A1 : float, A2 : float, phi : float = 0.65)-> float:
+        mu = (A2/A1)**0.5
+
         if A2 < A1:
             raise ValueError("A2, A1'den küçük olamaz!!!")
         if A2 >= A1:
-            f_pmax = fi * 0.85 * f_c * (A2/A1)**0.5
-
-        if (A2/A1)**0.5 >= 1 and (A2/A1)**0.5 <= 2:
+            f_pmax = phi * 0.85 * f_c * mu
+        if mu >= 1 and mu <= 2:
             print("Beton sargılama katkısı kullanılabilir.")
 
         return round(f_pmax,2)
 
     # Türkiye çelik yapılar yönetmeliği denk. 13.22-23
+    
     def Get_P_p(self,f_pmax : float, A1 : float, f_c : float)-> float:
         P_p = f_pmax * A1
         P_p = min(P_p, 1.7 * f_c * A1)
         return round(P_p,2)
 
+    
     def q_max_Get(self,f_pmax : float, B : float)-> float:
         q_max = f_pmax * B
         return round(q_max,2)
 
+    
     def e_crit_Get(self,q_max : float, P_u : float, N : float)-> float:
         e_crit = N/2 - (P_u / (2*q_max))
         return round(e_crit,2)
 
+    
     def Get_m(self,N : float, d : float)->int:
         return round((N-0.95*d)/2,2)
 
+    
     def Get_n(self,B : float, b_f : float)->int:
         return round((B-0.8*b_f)/2,2)
 
-    def Get_X(self,d : float, b_f : float, P_u : float, P_p : float, fi : float = 0.9)->float:
+    
+    def Get_X(self,d : float, b_f : float, P_u : float, P_p : float)->float:
         X = (4 * d * b_f * P_u) / ((d + b_f)**2 *  P_p)
         return round(X,2)
 
+    
     def Get_lambda(self,X : float)->float:
-        lambda_x = 1.0
+        lamb_x = 1.0
         if X <1:
-            lambda_x = (2*X**0.5) / (1 + (1-X)**0.5)
-        lamb_ = min(1.0,lambda_x)
-        return round(lamb_,2)
+            lamb_x = (2*X**0.5) / (1 + (1-X)**0.5)
+        lamb = min(1.0,lamb_x)
+        return round(lamb,2)
 
+    
     def Get_l(self,d : float, b_f : float, m : float, n : float, lamb : float)-> float:
         n_lamb = lamb * (d * b_f)**0.5 / 4
         return max(m,n,n_lamb)
 
-    def BasePlateThickness(self,P_u : float, l : float, B : float, N : float, F_y : float, fi : float = 0.9)->int:
-        t_min = l * ((2 * P_u) / (fi * F_y * B * N))**0.5
+    
+    def BasePlateThickness(self,P_u : float, l : float, B : float, N : float, F_y : float, phi : float = 0.9)->int:
+        t_min = l * ((2 * P_u) / (phi * F_y * B * N))**0.5
         return round(t_min,2)
 
     def Get_Y(self,e : float, e_crit : float, P_u : float, N : float, f : float, q_max : float) -> float:
@@ -295,6 +330,7 @@ class BasePlate:
             Y = min(Y1,Y2)
         return Y
 
+    
     def Get_f_p(self,P_u : float, B : float, Y : float) -> float:
         return round(P_u/(B*Y),2)
 
@@ -312,6 +348,7 @@ class BasePlate:
         t_p_req = max(t_p_req2,t_p_req1)
         return round(t_p_req,2)
 
+    
     def Get_t(self,N : int, x : float) -> float:
         """ankraj merkezinden plaka orta noktasına olan mesafeyi hesaplar
 
@@ -325,6 +362,7 @@ class BasePlate:
         t = N/2 - x #ankraj merkezinden plaka orta noktasına olan mesafe
         return round(t,2)
 
+    
     def Get_q(self,P_u : float, Y : float) -> float:
         return round(P_u/Y,2)
 
