@@ -190,12 +190,10 @@ class BasePlate:
         A1 = B * N
         return round(A1,2)
     
-    
     def GetConcArea(self, B2 : float, N2 : float):
         A2 = B2 * N2
         return round(A2,2)
 
-    
     def DefineCase(self, A1: float, A2: float)-> float:
         if A1 == A2:
             Case = 1
@@ -250,7 +248,6 @@ class BasePlate:
                 B = B + 1
         return N
 
-    
     def e_Get(self,M_u : float, P_u : float)-> float:
         e = round(M_u/P_u,2)
         return e
@@ -274,30 +271,24 @@ class BasePlate:
         P_p = min(P_p, 1.7 * f_c * A1)
         return round(P_p,2)
 
-    
     def q_max_Get(self,f_pmax : float, B : float)-> float:
         q_max = f_pmax * B
         return round(q_max,2)
-
-    
+  
     def e_crit_Get(self,q_max : float, P_u : float, N : float)-> float:
         e_crit = N/2 - (P_u / (2*q_max))
         return round(e_crit,2)
 
-    
     def Get_m(self,N : float, d : float)->int:
         return round((N-0.95*d)/2,2)
 
-    
     def Get_n(self,B : float, b_f : float)->int:
         return round((B-0.8*b_f)/2,2)
 
-    
     def Get_X(self,d : float, b_f : float, P_u : float, P_p : float)->float:
         X = (4 * d * b_f * P_u) / ((d + b_f)**2 *  P_p)
         return round(X,2)
 
-    
     def Get_lambda(self,X : float)->float:
         lamb_x = 1.0
         if X <1:
@@ -305,12 +296,10 @@ class BasePlate:
         lamb = min(1.0,lamb_x)
         return round(lamb,2)
 
-    
     def Get_l(self,d : float, b_f : float, m : float, n : float, lamb : float)-> float:
         n_lamb = lamb * (d * b_f)**0.5 / 4
         return max(m,n,n_lamb)
 
-    
     def BasePlateThickness(self,P_u : float, l : float, B : float, N : float, F_y : float, phi : float = 0.9)->int:
         t_min = l * ((2 * P_u) / (phi * F_y * B * N))**0.5
         return round(t_min,2)
@@ -330,7 +319,6 @@ class BasePlate:
             Y = min(Y1,Y2)
         return Y
 
-    
     def Get_f_p(self,P_u : float, B : float, Y : float) -> float:
         return round(P_u/(B*Y),2)
 
@@ -348,7 +336,6 @@ class BasePlate:
         t_p_req = max(t_p_req2,t_p_req1)
         return round(t_p_req,2)
 
-    
     def Get_t(self,N : int, x : float) -> float:
         """ankraj merkezinden plaka orta noktasına olan mesafeyi hesaplar
 
@@ -362,7 +349,6 @@ class BasePlate:
         t = N/2 - x #ankraj merkezinden plaka orta noktasına olan mesafe
         return round(t,2)
 
-    
     def Get_q(self,P_u : float, Y : float) -> float:
         return round(P_u/Y,2)
 
@@ -413,6 +399,7 @@ class SteelStrengthOfAnchorInTension:
 
 class ConcreteBreakoutStrengthOfAnchorInTension:
     
+    # TODO InstalledType tipi direk castin veya postin sınıfı olarak alınabilir ayrıca bir sınıfa gerek yok bence.
     def Psi_cpN_Get(self,Cac : float, Ca_min : float, h_ef: float, InstalledType : AnchorInstalledType) -> float:
         """ACI 318-19 17.6.2.6 Breakout splitting factor
 
@@ -600,7 +587,7 @@ class PulloutStrengthInTension:
     
 class ConcreteSideFaceBlowoutStrengthOfHeadedAnchorInTension:
     # Bu kontrol cast-in ankrajlarda genelde görülür post-in ankrajlarda kurulum sırasında ayrılma durumu genelde govern eder(ACI355.2 ye göre gereksinimler karşılanır.) bu nedenle bu kontrol cast-in ankrajlarda yapılır.
-    def SingleHeadedAnchorSideFaceBlowoutStrength(self, h_ef : float, C_a1 : float, C_a2 : float, A_brg : float, lambda_a : float, f_c : float)-> float:
+    def SingleHeadedAnchorSideFaceBlowoutStrength(self, h_ef : float, C_a1 : float, C_a2 : float, A_brg : float, f_c : float, lambda_a : float = 1.0)-> float:
         """Single Headed Anchor Side Face Blowout Strength
 
         Args:
@@ -608,8 +595,8 @@ class ConcreteSideFaceBlowoutStrengthOfHeadedAnchorInTension:
             C_a1 (float)    : distance from the center of an anchor shaft to the edge of concrete in one direction, in. If shear is applied to anchor, ca1 is taken in the direction of the applied shear. If tension is applied to the anchor, ca1 is the minimum edge distance. Where anchors subject to shear are located in narrow sections of limited thickness, see R17.7.2.1.2
             C_a2 (float)    : distance from center of an anchor shaft to the edge of concrete in the direction perpendicular to ca1,
             A_brg (float)   : Net bearing area of the head of stud, anchor bolt, or headed deformed bar,
-            lambda_a (float): Modification factor to reflect the reduced mechanical properties of lightweight concrete concrete anchorage applications
             f_c (float)     : Specified compressive strength of concrete
+            lambda_a (float): Modification factor to reflect the reduced mechanical properties of lightweight concrete concrete anchorage applications. Normal weight concrete is defalut and value = 1.0
 
         Returns:
             float: N_sb
@@ -924,8 +911,7 @@ class ConcreteBreakoutStrengthOfAnchorInShear:
         """
         N_cb = (A_Vc/A_Vco) * Psi_ecV * Psi_edV * Psi_cV * Psi_hV * V_b
         return round(N_cb,3)
-
-        
+       
 class ConcretePryoutStrengthOfAnchorInShear:
     
     def SingleAnchorConcPryoutStrengthInShear(self, h_ef : float, N_cp : float)-> float:
