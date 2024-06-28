@@ -1,7 +1,7 @@
 import math
 import pytest
 
-from steeldesign.BasePlate import BasePlate
+from steeldesign.BaseConnection import BasePlate
 
 
 
