@@ -3,7 +3,10 @@ from math import sqrt
 from dataclasses import dataclass, field
 import math
 
-from handcalcs import handcalc
+
+from Anchors import Anchor
+from BasePlate import Plate
+from Material import Concrete
 
 class AnchorInstalledType(Enum):
     Cast_in = 1
@@ -25,16 +28,247 @@ class PostInAnchorType(Enum):
     DisplacementControlledExpansion = 5
     Screw = 6
 
+@dataclass
+class BaseConnection:
+    """
+    # P1,V2,V3,M2,M3 olabilir yükleme.
+        P_u(float) : LRFD kombinasyonlarından gelen talep eksenel basınç kuvveti 
+        M_u(float) : LRFD kombinasyonlarından gelen talep eksenel moment kuvveti
+        V_u(float) : LRFD kombinasyonlarından gelen talep eksenel kesme kuvveti 
+        d  (float) : Çelik kesitin yüksekliği
+        b_f(float) : Çelik kesitin başlık genişliği
+        x (float)  : Ankraj rodun merkezinin plaka kenarına olan mesafesi  
+        ConcMat    : Concrete
+        BasePlate  : Plate
+        Anchors    : Anchor
+    """
+    P_u         : float
+    M_u         : float
+    V_u         : float
+    d           : float
+    b_f         : float
+    x           : float
+    ConcMat     : Concrete
+    BasePlate   : Plate
+    Anchors     : Anchor
 
-class BasePlate:
-    pass
+    def __init__(self,P_u : float, M_u : float, V_u : float, d : float, b_f : float, x : float, ConcMat : Concrete, BasePlate : Plate, Anchors : Anchor) -> None:
+        self.P_u       = P_u      
+        self.M_u       = M_u      
+        self.V_u       = V_u      
+        self.d         = d        
+        self.b_f       = b_f      
+        self.x         = x        
+        self.ConcMat   = ConcMat  
+        self.BasePlate = BasePlate
+        self.Anchors   = Anchors  
 
-class Anchor:
-    pass
+        self.Control_m()
+        self.Control_n()
+        self.f      = self.Get_f()
+        self.A1_req = self.ApproximateBasePlateArea()
+        self.e      = self.e_Get()
+        self.f_pmax = self.f_pmax_Get()
+        self.q_max  = self.q_max_Get()
 
-class Concrete:
-    pass
+        self.P_p    = self.Get_P_p()
+        self.X      = self.Get_X()
+        self.lamb   = self.Get_lambda()
+        self.l      = self.Get_l()
 
+        self.e_crit = self.e_crit_Get()
+        self.f_pmax = self.f_pmax_Get()
+
+        self.Y      = self.Get_Y()
+        self.q      = self.Get_q()
+        if self.q > self.q_max:
+            print("q > q_max !!!")
+        self.f_p    = self.Get_f_p()
+
+        self.t_req = max(self.BasePlateThickness(),self.ForMomentsBasePlateThickness())
+        if self.BasePlate.t < self.t_req:
+            print(f"t = {self.BasePlate.t} < {self.t_req} = t_req change to baseplate thickness!!!")
+
+
+    def ApproximateBasePlateArea(self,phi : float = 0.65)-> float:
+        """Eksenel basınç durumunda plakanın üniform gerilme dağılımı oluşturabilmesi için minimum gerekli taban plaka alanını hesaplar.
+
+        Args:
+            P_u (float): LRFD kombinasyonlarından analizle gelen eksenel kuvvet, N
+            f_c (float): Beton basınç dayanımı, N/mm^2 
+            Case (int, optional): 
+                                A1 : Taban plakasi alani; A2 : Beton yüzey alani
+                                Case 1 : A1 = A2; Case 2 : A2 >= 4A1; Case 3 : A1 < A2 < 4A1. Defaults to 3.
+            phi (float, optional): Dayanım azaltma katsayısı. Defaults to 0.65.
+
+        Returns:
+            float: A1_req
+        """
+        if self.BasePlate.Case == 1:
+            A1_req = self.P_u / (phi * 0.85 * self.ConcMat.F_ck)
+
+        if self.BasePlate.Case == 2 or self.BasePlate.Case == 3:
+            A1_req = self.P_u / (2 * phi * 0.85 * self.ConcMat.F_ck)
+        return round(A1_req,0)
+
+    def FindPlateDimensions(self,A1_req : float)-> int:
+        """Verilen bilgilere göre eksenel yüklemedeki plaka boyutlarını bulur. B=N ve 5 in katı olacak şekilde ayarlanır.
+
+        Args:
+            A1_req (float): _description_
+
+        Raises:
+            f: _description_
+
+        Returns:
+            int: _description_
+        """
+
+        delta = (0.95 * self.d - 0.8 * self.b_f) / 2
+        
+        N_1 = A1_req**0.5 + delta
+        N_2 = self.d + 2 * 80#inç - 3inç yerine 80mm olmalı
+        N = max(N_1,N_2)
+
+        B_1 = A1_req / N
+        B_2 = self.b_f + 2 * 80#inç - 3inç yerine 80mm olmalı
+        B = max(B_1,B_2)
+
+        N = math.ceil(max(B,N))
+        B = N
+        A_baseplate = B * N
+        if A1_req > A_baseplate:
+            raise f"A1_req = {A1_req} > {A_baseplate} = A_baseplate"
+        else:
+            print("Uygulama açısından kare plaka tercih edilmiştir taban plakasının B ve N boyutları eşittir.")
+        
+        while N%5 != 0:
+                N = N + 1
+                B = B + 1
+        return N
+
+    def e_Get(self)-> float:
+        """Yüklemenin eksantrisitesini bulur.
+
+        Returns:
+            float: _description_
+        """
+        e = round(self.M_u/self.P_u,2)
+        return e
+
+    def f_pmax_Get(self,phi : float = 0.65)-> float:
+        mu = (self.BasePlate.A2 / self.BasePlate.A1)**0.5
+
+        if self.BasePlate.A2 < self.BasePlate.A1:
+            raise ValueError("A2, A1'den küçük olamaz!!!")
+        if self.BasePlate.A2 >= self.BasePlate.A1:
+            f_pmax = phi * 0.85 * self.ConcMat.F_ck * mu
+            if f_pmax > 1.7 * self.ConcMat.F_ck * self.BasePlate.A2:
+                f_pmax = 1.7 * self.ConcMat.F_ck * self.BasePlate.A2
+        if mu >= 1 and mu <= 2:
+            print("Beton sargılama katkısı kullanılabilir.")
+
+        return round(f_pmax,2)
+
+    # Türkiye çelik yapılar yönetmeliği denk. 13.22-23
+    
+    def Get_P_p(self)-> float:
+        P_p = self.f_pmax * self.BasePlate.A1
+        P_p = min(P_p, 1.7 * self.ConcMat.F_ck * self.BasePlate.A1)
+        return round(P_p,2)
+
+    def q_max_Get(self)-> float:
+        q_max = self.f_pmax * self.BasePlate.B
+        return round(q_max,2)
+  
+    def e_crit_Get(self)-> float:
+        e_crit = self.BasePlate.N/2 - (self.P_u / (2*self.q_max))
+        return round(e_crit,2)
+
+    def Control_m(self)->int:
+        m_2 = round((self.BasePlate.N - 0.95 * self.d)/2,2)
+        if self.BasePlate.m < m_2:
+            self.BasePlate.m = m_2
+
+    def Control_n(self)->int:
+        return round((self.BasePlate.B - 0.8 * self.b_f) / 2 ,2)
+
+    def Get_X(self)->float:
+        X = (4 * self.d * self.b_f * self.P_u) / ((self.d + self.b_f)**2 *  self.P_p)
+        return round(X,2)
+
+    def Get_lambda(self)->float:
+        lamb_x = 1.0
+        if self.X <1:
+            lamb_x = (2 * self.X**0.5) / (1 + (1 - self.X)**0.5)
+        lamb = min(1.0,lamb_x)
+        return round(lamb,2)
+
+    def Get_l(self)-> float:
+        n_lamb = self.lamb * (self.d * self.b_f)**0.5 / 4
+        l      = max(self.BasePlate.m, self.BasePlate.n, n_lamb)
+        return l
+
+    def BasePlateThickness(self,phi : float = 0.9)->int:
+        t_min = self.l * ( (2 * self.P_u) / (phi * self.F_y * self.BasePlate.B * self.BasePlate.N) )**0.5
+        return round(t_min,2)
+
+    def Get_f(self) -> float:
+        """ankraj merkezinden plaka orta noktasına olan mesafeyi hesaplar
+
+        Args:
+            N (int): İlgili doğrultuda plaka boyutu
+            x (float): Ankraj rodun merkezinin plaka kenarına olan mesafesi
+
+        Returns:
+            float: f
+        """
+        t = self.BasePlate.N / 2 - self.x #ankraj merkezinden plaka orta noktasına olan mesafe
+        return round(t,2)
+    
+    def Get_Y(self) -> float:
+        if self.e <= self.e_crit:
+            Y = self.BasePlate.N - 2 * self.e
+        
+        if self.e > self.e_crit:
+            limit = (self.f + self.BasePlate.N / 2)**2
+            check = (2 * self.P_u * (self.e + self.f)) / self.q_max
+            if check > limit:
+                print("Denge denklemi çözümsüz plaka büyütülmeli.")
+                return 0.0
+            Y1 = (self.f + self.BasePlate.N*0.5)  + ( (self.f + self.BasePlate.N * 0.5)**2 - (2 * self.P_u * (self.e + self.f)) / self.q_max )**0.5
+            Y2 = (self.f + self.BasePlate.N*0.5)  - ( (self.f + self.BasePlate.N * 0.5)**2 - (2 * self.P_u * (self.e + self.f)) / self.q_max )**0.5
+            Y = min(Y1,Y2)
+        if Y <= 0 :
+            Y = 1
+        return Y
+
+    def Get_q(self) -> float:
+        return round(self.P_u / self.Y,2)
+    
+    def Get_f_p(self) -> float:
+        """Basınç alanının gerilmesini hesaplar. Calculation of bearing stress
+
+        Returns:
+            float: f_p
+        """
+        return round(self.P_u / (self.BasePlate.B * self.Y),2)
+
+    def ForMomentsBasePlateThickness(self)-> int:
+        if self.Y >= self.BasePlate.m:
+            t_p_req1 = 1.5 * self.BasePlate.m * (self.f_p / self.BasePlate.Mat.F_y)**0.5
+        if self.Y < self.BasePlate.m :
+            t_p_req1 = 2.11 * ( (self.f_p * self.Y * (self.m - self.Y*0.5) ) / self.BasePlate.Mat.F_y)
+        
+        if self.Y >= self.BasePlate.n:
+            t_p_req2 = 1.5 * self.BasePlate.n * (self.f_p / self.BasePlate.Mat.F_y)**0.5
+        if self.Y < self.BasePlate.n :
+            t_p_req2 = 2.11 * ( (self.f_p * self.Y * (self.BasePlate.n - self.Y*0.5) ) / self.BasePlate.Mat.F_y)
+        
+        t_p_req = max(t_p_req2,t_p_req1)
+        return round(t_p_req,2) 
+
+    
 
 
 @dataclass
@@ -332,10 +566,6 @@ class BasePlate:
 
     def Get_q(self,P_u : float, Y : float) -> float:
         return round(P_u/Y,2)
-
-
-
-
 
 
 # Betona ankrajlanmış birleşimlerde limit dayanımlar
@@ -917,28 +1147,47 @@ class ConcretePryoutStrengthOfAnchorInShear:
 
 
 
-# def main() -> None:
-#     # conn = AnchorConnection(d=12.7, bf= 12.2, B= 240, N= 240, tf=10, P_axial=700, M=50, fck= 3)
-#     # BasePlat = CheckBasePlate(Contn=conn, ReductionFactor=0.65)
-#     # print(f' A1 ={BasePlat.A1}, N ={BasePlat.N}, ')
-#     # pt = CastInAnchorType(1)
-#     # print(pt.__class__.__name__.split("In")[0])
-#     bp = BasePlate(P_u  = 2_520_000, #N ,
-#                    M_u  = 0, #Nmm,
-#                    V_u  = 0.0,      #N
-#                    f_c  = 25,       #MPa
-#                    d    = 280,      #mm
-#                    b_f  = 280,      #mm
-#                    F_y  = 275,      #MPa
-#                    B    = 300,      #mm
-#                    N    = 300,      #mm
-#                    B2   = 350,      #mm
-#                    N2   = 350,      #mm
-#                    x    =1.5*2.34             #mm
-#                    )
-#     # print(f"B = {bp.B}\n N = {bp.N}\n B2 = {bp.B2}\n N2 = {bp.N2}\n")
-#     bp.DesignBasePlate()
-#     # print(f"B = {bp.B}\n N = {bp.N}\n B2 = {bp.B2}\n N2 = {bp.N2}\n t_p = {bp.t_p}\n")
-#     print(bp)
-# if __name__ == "__main__":
-#     main()
+def main() -> None:
+    # conn = AnchorConnection(d=12.7, bf= 12.2, B= 240, N= 240, tf=10, P_axial=700, M=50, fck= 3)
+    # BasePlat = CheckBasePlate(Contn=conn, ReductionFactor=0.65)
+    # print(f' A1 ={BasePlat.A1}, N ={BasePlat.N}, ')
+    # pt = CastInAnchorType(1)
+    # print(pt.__class__.__name__.split("In")[0])
+    # bp = BasePlate(P_u  = 2_520_000, #N ,
+    #                M_u  = 0, #Nmm,
+    #                V_u  = 0.0,      #N
+    #                f_c  = 25,       #MPa
+    #                d    = 280,      #mm
+    #                b_f  = 280,      #mm
+    #                F_y  = 275,      #MPa
+    #                B    = 300,      #mm
+    #                N    = 300,      #mm
+    #                B2   = 350,      #mm
+    #                N2   = 350,      #mm
+    #                x    =1.5*2.34             #mm
+    #                )
+    # # print(f"B = {bp.B}\n N = {bp.N}\n B2 = {bp.B2}\n N2 = {bp.N2}\n")
+    # bp.DesignBasePlate()
+    # # print(f"B = {bp.B}\n N = {bp.N}\n B2 = {bp.B2}\n N2 = {bp.N2}\n t_p = {bp.t_p}\n")
+    # print(bp)
+    from Anchors import M16
+    from BasePlate import Plate
+    from Material import C25,S235
+    conc = C25()
+    steel = S235()
+    baseplate = Plate(B = 300, N=300, B2=350, N2=350, m=30, n=30, t=15, Mat=steel)
+    anch        = M16()
+
+    bpcon = BaseConnection( P_u         = 2_520_000,   #N ,
+                            M_u         = 0,           #Nmm,
+                            V_u         = 0.0,         #N
+                            d           = 280,         #mm
+                            b_f         = 280,         #mm
+                            x           = 30,
+                            ConcMat     = conc,
+                            BasePlate   = baseplate,
+                            Anchors     = anch
+                        )
+    print(bpcon)
+if __name__ == "__main__":
+    main()

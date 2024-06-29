@@ -136,6 +136,8 @@ class MechanicalProperties:
         plt.savefig(filename, format=format, dpi=dpi)
         plt.close()
 
+
+
 @dataclass
 class IShapeGeometry:
     """
